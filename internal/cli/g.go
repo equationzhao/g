@@ -201,8 +201,8 @@ func dive(
 				continue
 			}
 			// store its parent and level/depth
-			info.Cache["parent"] = []byte(current.path)
-			info.Cache["level"] = []byte(strconv.Itoa(current.depth))
+			info.ParentPath = current.path
+			info.Level = current.depth
 			infos.AppendTo(info)
 			if f.IsDir() && (limit <= 0 || current.depth+1 <= limit) {
 				subDirs = append(subDirs, dirState{path: info.FullPath, depth: current.depth + 1})
@@ -782,7 +782,7 @@ var logic = func(context *cli.Context) error {
 			infos = itemFilter.Filter(infos...)
 
 			if tree {
-				infos[0].Cache["level"] = []byte("0")
+				infos[0].Level = 0
 			}
 			goto final
 		}
@@ -797,7 +797,7 @@ var logic = func(context *cli.Context) error {
 			infos = append(
 				infos, info,
 			)
-			infos[0].Cache["level"] = []byte("0")
+			infos[0].Level = 0
 			if depth >= 1 || depth < 0 {
 				infoSlice := util.NewSlice[*item.FileInfo](10)
 				errSlice := util.NewSlice[error](10)

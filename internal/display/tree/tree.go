@@ -27,11 +27,10 @@ drwxr-xr-x@    - mr.black 10 7 03:38 │  ├── content
 */
 
 type Node struct {
-	Parent     *Node
-	Child      []*Node
-	Connectors []string
-	Level      int
-	Meta       *item.FileInfo
+	Parent *Node
+	Child  []*Node
+	Level  int
+	Meta   *item.FileInfo
 }
 
 func (n *Node) Apply2Child(f func(node *Node)) {
@@ -80,9 +79,8 @@ func WithCap(cap int) Option {
 func NewTree(ops ...Option) *Tree {
 	t := &Tree{
 		Root: &Node{
-			Parent:     nil,
-			Level:      0,
-			Connectors: nil,
+			Parent: nil,
+			Level:  0,
 		},
 	}
 	for _, op := range ops {

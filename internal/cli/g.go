@@ -163,36 +163,53 @@ func init() {
 // for generating file tree
 func dive(
 	parent string, depth, limit int, infos *util.Slice[*item.FileInfo], errSlice *util.Slice[error],
-	wg *sync.WaitGroup, itemFilter *filter.ItemFilter,
+	itemFilter *filter.ItemFilter,
 ) {
-	defer wg.Done()
 	if limit > 0 && depth > limit {
 		return
 	}
-	dir, err := os.ReadDir(parent)
-	if err != nil {
-		errSlice.AppendTo(err)
-		return
+
+	type dirState struct {
+		path  string
+		depth int
 	}
-	for _, entry := range dir {
-		f, err := entry.Info()
+
+	stack := []dirState{{path: parent, depth: depth}}
+	for len(stack) > 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if limit > 0 && current.depth > limit {
+			continue
+		}
+		dir, err := os.ReadDir(current.path)
 		if err != nil {
 			errSlice.AppendTo(err)
 			continue
 		}
-		nowAbs := filepath.Join(parent, f.Name())
-		info, _ := item.NewFileInfoWithOption(item.WithAbsPath(nowAbs), item.WithFileInfo(f))
-		// check filter
-		if !itemFilter.Match(info) {
-			continue
+		subDirs := make([]dirState, 0, len(dir))
+		for _, entry := range dir {
+			f, err := entry.Info()
+			if err != nil {
+				errSlice.AppendTo(err)
+				continue
+			}
+			nowAbs := filepath.Join(current.path, f.Name())
+			info, _ := item.NewFileInfoWithOption(item.WithAbsPath(nowAbs), item.WithFileInfo(f))
+			// check filter
+			if !itemFilter.Match(info) {
+				continue
+			}
+			// store its parent and level/depth
+			info.Cache["parent"] = []byte(current.path)
+			info.Cache["level"] = []byte(strconv.Itoa(current.depth))
+			infos.AppendTo(info)
+			if f.IsDir() && (limit <= 0 || current.depth+1 <= limit) {
+				subDirs = append(subDirs, dirState{path: info.FullPath, depth: current.depth + 1})
+			}
 		}
-		// store its parent and level/depth
-		info.Cache["parent"] = []byte(parent)
-		info.Cache["level"] = []byte(strconv.Itoa(depth))
-		infos.AppendTo(info)
-		if f.IsDir() {
-			wg.Add(1)
-			go dive(info.FullPath, depth+1, limit, infos, errSlice, wg, itemFilter)
+		for i := len(subDirs) - 1; i >= 0; i-- {
+			stack = append(stack, subDirs[i])
 		}
 	}
 }
@@ -782,14 +799,9 @@ var logic = func(context *cli.Context) error {
 			)
 			infos[0].Cache["level"] = []byte("0")
 			if depth >= 1 || depth < 0 {
-				wg := sync.WaitGroup{}
 				infoSlice := util.NewSlice[*item.FileInfo](10)
 				errSlice := util.NewSlice[error](10)
-				wg.Add(1)
-				go dive(
-					path[i], 1, depth, infoSlice, errSlice, &wg, itemFilter,
-				)
-				wg.Wait()
+				dive(path[i], 1, depth, infoSlice, errSlice, itemFilter)
 				infos = append(infos, *infoSlice.GetRaw()...)
 				for _, err := range *errSlice.GetRaw() {
 					if err != nil {

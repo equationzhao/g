@@ -12,9 +12,11 @@ import (
 
 type FileInfo struct {
 	os.FileInfo
-	FullPath string
-	Meta     *cached.Map[string, Item]
-	Cache    map[string][]byte
+	FullPath   string
+	ParentPath string
+	Level      int
+	Meta       *cached.Map[string, Item]
+	Cache      map[string][]byte
 }
 
 type Option = func(info *FileInfo) error

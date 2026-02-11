@@ -716,11 +716,7 @@ func (t *TreePrinter) Print(s ...*item.FileInfo) {
 	// and the order is the same as the input
 	total := len(s)
 
-	buildTree := tree.NewTree(tree.WithCap(total / 2))
-	level := make(map[string][]*item.FileInfo)
-	for _, v := range s {
-		level[string(v.Cache["level"])] = append(level[string(v.Cache["level"])], v)
-	}
+	buildTree := NewTreeBuilder().Build(s)
 
 	prefixAndName := func(info *item.FileInfo) (prefix, name string) {
 		v := info.ValuesByOrdered()
@@ -735,29 +731,6 @@ func (t *TreePrinter) Print(s ...*item.FileInfo) {
 		prefix = pb.String()
 		name = v[len(v)-1].String()
 		return prefix, name
-	}
-
-	// root
-	l := len(level)
-	nodeMap := make(map[string]*tree.Node, l)
-
-	root := level["0"][0]
-	buildTree.Root.Meta = root
-	nodeMap[root.FullPath] = buildTree.Root
-
-	for i := 1; i < l; i++ {
-		for _, v := range level[strconv.Itoa(i)] {
-			node := nodeMap[string(v.Cache["parent"])]
-			c := &tree.Node{
-				Parent:     node,
-				Child:      make([]*tree.Node, 0, 10),
-				Level:      i,
-				Meta:       v,
-				Connectors: make([]string, i),
-			}
-			nodeMap[v.FullPath] = c
-			node.AddChild(c)
-		}
 	}
 
 	Child := "├── "
@@ -778,32 +751,11 @@ func (t *TreePrinter) Print(s ...*item.FileInfo) {
 		Empty = config.Default.CustomTreeStyle.Empty
 	}
 
-	// print
-	// the number of the prefixes is the level of the node
-	// the length of prefix is 4
-
-	applyConnectors := func(nodes []*tree.Node) {
-		l := len(nodes)
-		for i, n := range nodes {
-			if i != l-1 {
-				n.Connectors[n.Level-1] = Child
-				n.Apply2Child(
-					func(node *tree.Node) {
-						node.Connectors[n.Level-1] = Mid
-					},
-				)
-			} else {
-				n.Connectors[n.Level-1] = LastChild
-			}
-		}
-	}
-
-	buildTree.Root.Apply2ChildSlice(applyConnectors)
-
 	counter := 0
 	totalLen := len(strconv.Itoa(total))
-	// print
-	p := func(node *tree.Node) {
+	connectors := make([]string, 0, 8)
+	var printTree func(node *tree.Node, isLast, isRoot bool)
+	printTree = func(node *tree.Node, isLast, isRoot bool) {
 		if t.NO {
 			no := &ItemContent{
 				No:      -1,
@@ -816,19 +768,35 @@ func (t *TreePrinter) Print(s ...*item.FileInfo) {
 		prefix, name := prefixAndName(node.Meta)
 		_, _ = t.WriteString(prefix)
 		_, _ = t.WriteString(global.Faint)
-		for _, c := range node.Connectors {
-			if c == "" {
-				_, _ = t.WriteString(Empty)
+		for _, c := range connectors {
+			_, _ = t.WriteString(c)
+		}
+		if !isRoot {
+			if isLast {
+				_, _ = t.WriteString(LastChild)
 			} else {
-				_, _ = t.WriteString(c)
+				_, _ = t.WriteString(Child)
 			}
 		}
 		_, _ = t.WriteString(global.Reset)
 		_, _ = t.WriteString(name)
 		_ = t.WriteByte('\n')
+		if !isRoot {
+			if isLast {
+				connectors = append(connectors, Empty)
+			} else {
+				connectors = append(connectors, Mid)
+			}
+		}
+		for i, child := range node.Child {
+			printTree(child, i == len(node.Child)-1, false)
+		}
+		if !isRoot {
+			connectors = connectors[:len(connectors)-1]
+		}
 	}
-	buildTree.Root.ApplyThis(p)
-	buildTree.Root.Apply2Child(p)
+
+	printTree(buildTree.Root, true, true)
 	if !t.hook.disableAfter {
 		fire(t.AfterPrint, t, s...)
 	}

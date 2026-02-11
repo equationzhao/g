@@ -33,7 +33,7 @@ func TestDiveSetsParentAndLevel(t *testing.T) {
 
 	infoSlice := util.NewSlice[*item.FileInfo](10)
 	errSlice := util.NewSlice[error](10)
-	dive(root, 1, -1, infoSlice, errSlice, filter.NewItemFilter())
+	Dive(root, 1, -1, infoSlice, errSlice, filter.NewItemFilter())
 
 	for _, err := range *errSlice.GetRaw() {
 		if err != nil {

@@ -159,61 +159,6 @@ func init() {
 	initVersionHelpFlags()
 }
 
-// dive
-// for generating file tree
-func dive(
-	parent string, depth, limit int, infos *util.Slice[*item.FileInfo], errSlice *util.Slice[error],
-	itemFilter *filter.ItemFilter,
-) {
-	if limit > 0 && depth > limit {
-		return
-	}
-
-	type dirState struct {
-		path  string
-		depth int
-	}
-
-	stack := []dirState{{path: parent, depth: depth}}
-	for len(stack) > 0 {
-		last := len(stack) - 1
-		current := stack[last]
-		stack = stack[:last]
-		if limit > 0 && current.depth > limit {
-			continue
-		}
-		dir, err := os.ReadDir(current.path)
-		if err != nil {
-			errSlice.AppendTo(err)
-			continue
-		}
-		subDirs := make([]dirState, 0, len(dir))
-		for _, entry := range dir {
-			f, err := entry.Info()
-			if err != nil {
-				errSlice.AppendTo(err)
-				continue
-			}
-			nowAbs := filepath.Join(current.path, f.Name())
-			info, _ := item.NewFileInfoWithOption(item.WithAbsPath(nowAbs), item.WithFileInfo(f))
-			// check filter
-			if !itemFilter.Match(info) {
-				continue
-			}
-			// store its parent and level/depth
-			info.ParentPath = current.path
-			info.Level = current.depth
-			infos.AppendTo(info)
-			if f.IsDir() && (limit <= 0 || current.depth+1 <= limit) {
-				subDirs = append(subDirs, dirState{path: info.FullPath, depth: current.depth + 1})
-			}
-		}
-		for i := len(subDirs) - 1; i >= 0; i-- {
-			stack = append(stack, subDirs[i])
-		}
-	}
-}
-
 func fuzzyUpdate(path string) error {
 	err := index.Update(path)
 	if err != nil {
@@ -801,7 +746,7 @@ var logic = func(context *cli.Context) error {
 			if depth >= 1 || depth < 0 {
 				infoSlice := util.NewSlice[*item.FileInfo](10)
 				errSlice := util.NewSlice[error](10)
-				dive(path[i], 1, depth, infoSlice, errSlice, itemFilter)
+				Dive(path[i], 1, depth, infoSlice, errSlice, itemFilter)
 				infos = append(infos, *infoSlice.GetRaw()...)
 				for _, err := range *errSlice.GetRaw() {
 					if err != nil {

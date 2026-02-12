@@ -72,12 +72,26 @@ gofumpt -w -extra .  # Fix formatting
 
 # Lint code (NEVER CANCEL: takes ~60 seconds)
 golangci-lint run ./... --timeout=3m
+
+# Run single test file/package
+go test -v ./internal/cli/                    # Test specific package
+go test -v ./internal/cli/ -run TestDive      # Test specific function
+go test -bench=. ./internal/cli/              # Run benchmarks
+go test -bench=BenchmarkDive ./internal/cli/  # Run specific benchmark
 ```
 
 **CI Pipeline:** The project has three GitHub workflows that must pass:
-- `go.yml`: Multi-platform builds and tests
-- `gofumpt.yml`: Code formatting verification
-- `lint.yml`: Static code analysis
+- `go.yml`: Multi-platform builds and tests (Linux, macOS, Windows)
+- `gofumpt.yml`: Code formatting verification with gofumpt --extra
+- `lint.yml`: Static code analysis with golangci-lint
+
+**Performance Testing:** Use hyperfine for rigorous performance comparisons:
+```bash
+# Compare optimized vs baseline performance
+hyperfine --warmup 10 --min-runs 200 \
+  './g-baseline /large-test-dir' \
+  './g-optimized /large-test-dir'
+```
 
 ## Application Usage and Validation
 
@@ -157,28 +171,48 @@ cd /tmp && rm -rf g-validation-test
 
 ### Repository Layout
 ```
-/home/runner/work/g/g/
-├── main.go              # Main entry point
-├── go.mod               # Go module definition
-├── justfile             # Build automation (just command)
-├── internal/            # Internal Go packages
-│   ├── cli/            # Command line interface
-│   ├── display/        # Output formatting
-│   ├── git/            # Git integration
-│   ├── theme/          # Color themes
-│   └── ...
-├── .github/workflows/  # CI/CD pipelines
+├── main.go              # Main entry point with panic handling and config loading
+├── go.mod               # Go module definition (requires Go 1.24.0+)
+├── justfile             # Build automation (just command) 
+├── internal/            # Internal Go packages (modular architecture)
+│   ├── cli/            # Command line interface and main logic
+│   │   ├── g.go        # Core CLI logic with adaptive optimization strategy
+│   │   ├── dive.go     # Optimized recursive directory traversal
+│   │   └── helpers.go  # Strategy selection helpers
+│   ├── util/           # Performance optimization utilities
+│   │   ├── adaptive_strategy.go  # Intelligent processing strategy selection
+│   │   ├── dirreader.go          # Batch file information retrieval
+│   │   └── processors.go         # Directory processor implementations
+│   ├── display/        # Multiple output format implementations (table, JSON, tree, etc.)
+│   ├── filter/         # File filtering logic
+│   ├── sorter/         # Advanced sorting algorithms (version-sort, etc.)
+│   ├── git/            # Git status integration
+│   ├── theme/          # Customizable color themes
+│   ├── content/        # File content analyzers (mime-type, charset, etc.)
+│   ├── item/           # File info abstractions
+│   └── render/         # Terminal rendering with icon support
+├── .github/workflows/  # CI/CD pipelines (go.yml, gofumpt.yml, lint.yml)
 ├── completions/        # Shell completions (bash, zsh, fish)
-├── docs/               # Documentation
-├── script/             # Development scripts
+├── docs/               # Documentation including BuildOption.md
+├── script/             # Development and release automation scripts
 └── man/                # Manual pages
 ```
 
-### Important Files
-- `internal/cli/g.go`: Main CLI command definitions and logic
-- `internal/display/`: All output format implementations
-- `docs/BuildOption.md`: Detailed build configuration options
+### Important Files and Architecture
+- `main.go`: Entry point with config loading, panic handling, and argument preprocessing
+- `internal/cli/g.go`: Core CLI logic implementing adaptive optimization strategies
+- `internal/util/adaptive_strategy.go`: Performance optimization strategy selection (50-file threshold)
+- `internal/util/dirreader.go`: Batch file operations for reduced system calls  
+- `internal/cli/dive.go`: Optimized recursive directory traversal with memory pre-allocation
+- `internal/display/`: Modular output formatters (grid, table, tree, JSON, markdown)
+- `docs/BuildOption.md`: Build tags and feature configuration
 - `CONTRIBUTING.md`: Development workflow and commit standards
+
+### Performance Architecture
+The project implements an **adaptive optimization system** that intelligently selects processing strategies:
+- **Traditional processing**: Used for small directories (<50 files) and JSON output to avoid overhead
+- **Batch processing**: Used for large directories (≥50 files) with optimized system calls and memory allocation
+- **Recursive optimization**: Enhanced `dive.go` with pre-allocated memory and efficient string building
 
 ## Common Tasks
 
@@ -205,6 +239,24 @@ cd - && rm -rf /tmp/validation
 # Complete workflow timing: ~90 seconds total
 ```
 
+### Performance Optimization Development
+The project includes adaptive optimization strategies. When working on performance:
+
+```bash
+# Create benchmark comparison between implementations
+go test -bench=. -benchmem ./internal/cli/ > benchmark_results.txt
+
+# Test with hyperfine for statistical validation
+hyperfine --warmup 10 --min-runs 200 \
+  './g-baseline -l /test-dir' \
+  './g-optimized -l /test-dir'
+
+# Test specific optimization scenarios
+./g --tree --recurse large-directory/     # Test recursive optimizations
+./g --json small-directory/               # Verify traditional processing
+./g --table medium-directory/             # Test adaptive threshold (50+ files)
+```
+
 ### Build Tools Reference
 The project uses `justfile` for build automation, but core Go commands work directly:
 
@@ -217,6 +269,9 @@ go test -v ./...
 
 # Instead of: just precheck
 gofumpt -w -extra . && golangci-lint run ./...
+
+# Check available build targets
+just --list
 ```
 
 ### Shell Integration Setup
@@ -230,16 +285,36 @@ gofumpt -w -extra . && golangci-lint run ./...
 
 ## Troubleshooting
 
+## Troubleshooting
+
 ### Common Issues
 - **"Go version too low"**: Ensure Go >= 1.24.0 is installed
 - **Build fails**: Run `go mod tidy` to sync dependencies
 - **Tests fail**: Ensure working directory is repository root
 - **Lint fails**: Install golangci-lint compatible with Go 1.24+
+- **Performance regression**: Check if adaptive strategy threshold needs adjustment (see `internal/util/adaptive_strategy.go`)
+- **Benchmark inconsistency**: Ensure proper warmup and sufficient test runs for statistical validity
 
 ### Platform-Specific Notes
 - **Linux**: Full functionality available
-- **macOS**: All features work, CGO enabled for Darwin builds in CI
+- **macOS**: All features work, CGO enabled for Darwin builds in CI  
 - **Windows**: Core functionality works, some file attribute features limited
+
+### Performance Debugging
+When investigating performance issues:
+
+```bash
+# Profile CPU usage
+go build . && ./g -cpuprofile=cpu.prof /large-directory/
+go tool pprof cpu.prof
+
+# Profile memory allocation  
+./g -memprofile=mem.prof /large-directory/
+go tool pprof mem.prof
+
+# Compare strategies manually
+go test -bench=BenchmarkDive -benchmem ./internal/cli/
+```
 
 ### Binary Size Expectations
 - Default build: ~10.7MB
@@ -255,6 +330,9 @@ gofumpt -w -extra . && golangci-lint run ./...
 - Use `/path/to/g` in validation scripts to reference your built binary location
 - JSON output validation: always pipe through `jq '.'` to verify structure
 - Test with actual files in `/tmp` directories for realistic validation scenarios
+- **Performance considerations**: Changes to `internal/util/adaptive_strategy.go` require benchmark validation
+- **Adaptive optimization**: The 50-file threshold in strategy selection is empirically determined - don't change without extensive testing
+- **Memory allocation**: Pre-allocation strategies in `dive.go` and `dirreader.go` are critical for performance - preserve allocation patterns
 
 ## Version Information
 - Current version: v0.31.0

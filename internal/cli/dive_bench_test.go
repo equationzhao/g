@@ -6,27 +6,27 @@ import (
 	"testing"
 
 	"github.com/Equationzhao/g/internal/filter"
-	"github.com/Equationzhao/g/internal/util"
 	"github.com/Equationzhao/g/internal/item"
+	"github.com/Equationzhao/g/internal/util"
 )
 
 // setupBenchmarkDir creates test directory structure for benchmarking
 func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) string {
 	testDir := filepath.Join(os.TempDir(), dirName)
 	os.RemoveAll(testDir)
-	os.MkdirAll(testDir, 0755)
+	os.MkdirAll(testDir, 0o755)
 
 	for i := 0; i < numDirs; i++ {
 		subDir := filepath.Join(testDir, "subdir"+string(rune('0'+i%10)))
-		os.MkdirAll(subDir, 0755)
-		
+		os.MkdirAll(subDir, 0o755)
+
 		for j := 0; j < numFiles; j++ {
 			fileName := filepath.Join(subDir, "file"+string(rune('0'+j%10))+".txt")
 			f, _ := os.Create(fileName)
 			f.Close()
 		}
 	}
-	
+
 	return testDir
 }
 
@@ -34,15 +34,15 @@ func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) stri
 func BenchmarkDive_Original(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_original", 10, 50)
 	defer os.RemoveAll(testDir)
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		infos := util.NewSlice[*item.FileInfo](100)
 		errSlice := util.NewSlice[error](10)
 		itemFilter := filter.NewItemFilter()
-		
+
 		// Use the original dive function for comparison
 		benchmarkDiveOriginal(testDir, 1, -1, infos, errSlice, itemFilter)
 	}
@@ -52,15 +52,15 @@ func BenchmarkDive_Original(b *testing.B) {
 func BenchmarkDive_Optimized(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_optimized", 10, 50)
 	defer os.RemoveAll(testDir)
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		infos := util.NewSlice[*item.FileInfo](100)
 		errSlice := util.NewSlice[error](10)
 		itemFilter := filter.NewItemFilter()
-		
+
 		// Use the optimized dive function
 		Dive(testDir, 1, -1, infos, errSlice, itemFilter)
 	}
@@ -70,14 +70,14 @@ func BenchmarkDive_Optimized(b *testing.B) {
 func BenchmarkFileInfoBatch(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_batch", 1, 100)
 	defer os.RemoveAll(testDir)
-	
+
 	b.Run("Traditional", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			benchmarkFileInfoTraditional(testDir)
 		}
 	})
-	
+
 	b.Run("Batched", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
@@ -90,7 +90,7 @@ func BenchmarkFileInfoBatch(b *testing.B) {
 func benchmarkFileInfoTraditional(dir string) {
 	entries, _ := os.ReadDir(dir)
 	for _, entry := range entries {
-		entry.Info() // Individual system calls
+		entry.Info()                     // Individual system calls
 		filepath.Join(dir, entry.Name()) // Individual path concatenation
 	}
 }
@@ -135,11 +135,11 @@ func benchmarkDiveOriginal(parent string, depth, limit int, infos *util.Slice[*i
 			}
 			nowAbs := filepath.Join(current.path, f.Name()) // Individual path concatenation
 			info, _ := item.NewFileInfoWithOption(item.WithAbsPath(nowAbs), item.WithFileInfo(f))
-			
+
 			if !itemFilter.Match(info) {
 				continue
 			}
-			
+
 			info.ParentPath = current.path
 			info.Level = current.depth
 			infos.AppendTo(info)

@@ -756,12 +756,20 @@ var logic = func(context *cli.Context) error {
 				}
 			}
 		} else {
-			var d []os.DirEntry
-			d, err = os.ReadDir(path[i])
-			if err != nil {
-				seriousErr = true
-				checkErr(err, originPath)
-				continue
+			// Use adaptive strategy for optimal performance based on directory characteristics
+			strategy := util.NewOptimizationStrategy()
+			outputFormat := getOutputFormat(p)                   // We'll need to implement this helper
+			hasComplexFiltering := hasComplexFilters(itemFilter) // We'll need this helper too
+
+			processor := strategy.SelectProcessor(path[i], outputFormat, hasComplexFiltering)
+			fileInfos, processingErrors := processor.ProcessDirectory(path[i])
+
+			// Handle any processing errors
+			for _, err := range processingErrors {
+				if err != nil {
+					minorErr = true
+					checkErr(err, "")
+				}
 			}
 
 			if !flagA && !tree { // if -A(almost-all) is not set, add the "."/".." info
@@ -788,23 +796,8 @@ var logic = func(context *cli.Context) error {
 				}
 			}
 
-			for _, v := range d {
-				info, err := v.Info()
-				if err != nil {
-					minorErr = true
-					checkErr(err, "")
-				} else {
-					info, err := item.NewFileInfoWithOption(
-						item.WithFileInfo(info), item.WithAbsPath(filepath.Join(path[i], v.Name())),
-					)
-					if err != nil {
-						checkErr(err, "")
-						seriousErr = true
-						continue
-					}
-					infos = append(infos, info)
-				}
-			}
+			// Add processed files to main list
+			infos = append(infos, fileInfos...)
 
 			// remove non-display items
 			infos = itemFilter.Filter(infos...)

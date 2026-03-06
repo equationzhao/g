@@ -94,7 +94,7 @@ func BenchmarkFileInfoBatch(b *testing.B) {
 func benchmarkFileInfoTraditional(dir string) {
 	entries, _ := os.ReadDir(dir)
 	for _, entry := range entries {
-		_, _ = entry.Info()        // Individual system calls (errors ignored in benchmark)
+		_, _ = entry.Info()              // Individual system calls (errors ignored in benchmark)
 		filepath.Join(dir, entry.Name()) // Individual path concatenation
 	}
 }

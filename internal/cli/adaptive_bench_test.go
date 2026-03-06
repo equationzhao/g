@@ -12,12 +12,19 @@ import (
 func setupAdaptiveTestDir(tb testing.TB, dirName string, numFiles int) string {
 	testDir := filepath.Join(os.TempDir(), dirName)
 	os.RemoveAll(testDir)
-	os.MkdirAll(testDir, 0o755)
+	if err := os.MkdirAll(testDir, 0o755); err != nil {
+		tb.Fatalf("failed to create test directory: %v", err)
+	}
 
 	for i := range numFiles {
 		fileName := filepath.Join(testDir, "file_"+string(rune('A'+(i/26)))+string(rune('a'+(i%26)))+".txt")
-		f, _ := os.Create(fileName)
-		f.WriteString("test content")
+		f, err := os.Create(fileName)
+		if err != nil {
+			tb.Fatalf("failed to create test file: %v", err)
+		}
+		if _, err := f.WriteString("test content"); err != nil {
+			tb.Fatalf("failed to write test content: %v", err)
+		}
 		f.Close()
 	}
 

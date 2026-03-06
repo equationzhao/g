@@ -14,7 +14,7 @@ func setupAdaptiveTestDir(tb testing.TB, dirName string, numFiles int) string {
 	os.RemoveAll(testDir)
 	os.MkdirAll(testDir, 0o755)
 
-	for i := 0; i < numFiles; i++ {
+	for i := range numFiles {
 		fileName := filepath.Join(testDir, "file_"+string(rune('A'+(i/26)))+string(rune('a'+(i%26)))+".txt")
 		f, _ := os.Create(fileName)
 		f.WriteString("test content")

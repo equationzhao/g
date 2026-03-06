@@ -80,8 +80,8 @@ func init() {
 			ReturnCode = 2
 			str := err.Error()
 			const prefix = "flag provided but not defined: "
-			if strings.HasPrefix(str, prefix) {
-				suggest := suggestFlag(cCtx.App.Flags, strings.TrimLeft(strings.TrimPrefix(str, prefix), "-"))
+			if after, ok := strings.CutPrefix(str, prefix); ok {
+				suggest := suggestFlag(cCtx.App.Flags, strings.TrimLeft(after, "-"))
 				if suggest != "" {
 					str = fmt.Sprintf("%s, Did you mean %s?", str, suggest)
 				}
@@ -485,7 +485,7 @@ var logic = func(context *cli.Context) error {
 	fuzzy := context.Bool("fuzzy")
 	if fuzzy {
 		defer func() {
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				err := index.Close()
 				if err != nil {
 					continue

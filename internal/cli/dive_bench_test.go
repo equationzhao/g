@@ -16,11 +16,11 @@ func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) stri
 	os.RemoveAll(testDir)
 	os.MkdirAll(testDir, 0o755)
 
-	for i := 0; i < numDirs; i++ {
+	for i := range numDirs {
 		subDir := filepath.Join(testDir, "subdir"+string(rune('0'+i%10)))
 		os.MkdirAll(subDir, 0o755)
 
-		for j := 0; j < numFiles; j++ {
+		for j := range numFiles {
 			fileName := filepath.Join(subDir, "file"+string(rune('0'+j%10))+".txt")
 			f, _ := os.Create(fileName)
 			f.Close()

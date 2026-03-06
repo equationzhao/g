@@ -29,6 +29,7 @@ package util
 import (
 	"fmt"
 	"os"
+	"slices"
 )
 
 // v struct represents a semver version (usually, with some exceptions)
@@ -64,13 +65,7 @@ func hasEnv(name string) bool {
 // checkAllEnvs returns true if any of the environment variables in the "vars"
 // string slice are actually present in the environment, false otherwise
 func checkAllEnvs(vars []string) bool {
-	for _, v := range vars {
-		if hasEnv(v) {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(vars, hasEnv)
 }
 
 // getEnv returns the value of the environment variable, if it exists
@@ -84,10 +79,8 @@ func getEnv(name string) string {
 // of the given values in the "values" string slice, false otherwise
 func matchesEnv(name string, values []string) bool {
 	if hasEnv(name) {
-		for _, value := range values {
-			if getEnv(name) == value {
-				return true
-			}
+		if slices.Contains(values, getEnv(name)) {
+			return true
 		}
 	}
 	return false

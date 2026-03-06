@@ -91,8 +91,8 @@ func EnableTime(format, mode string, renderer *render.Renderer) ContentOption {
 		}
 
 		var timeString string
-		if strings.HasPrefix(format, "+") {
-			timeString = strftime.Format(t, strings.TrimPrefix(format, "+"))
+		if after, ok := strings.CutPrefix(format, "+"); ok {
+			timeString = strftime.Format(t, after)
 		} else {
 			timeString = t.Format(format)
 		}

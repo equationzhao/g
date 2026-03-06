@@ -90,7 +90,7 @@ var indexFlags = []cli.Flag{
 				if err != nil {
 					return err
 				}
-				for i := 0; i < len(keys); i++ {
+				for i := range keys {
 					fmt.Println(keys[i])
 				}
 			}

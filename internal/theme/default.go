@@ -61,12 +61,11 @@ var (
 func genAllField() ([]string, []string) {
 	genOnceAllField.Do(func() {
 		// reflect on Style
-		allType := DefaultAll
-		allTypeValue := reflect.TypeOf(allType)
+		allTypeValue := reflect.TypeFor[All]()
 		n := allTypeValue.NumField()
 		allField = make([]string, 0, n)
 		allFieldTag = make([]string, 0, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			f := allTypeValue.Field(i)
 			if j := f.Tag.Get("json"); j != "" {
 				jName, _, _ := strings.Cut(j, ",")

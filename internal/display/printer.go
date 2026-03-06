@@ -201,7 +201,7 @@ func (f *FitTerminal) printColumns(stringsArray []string, space int) {
 
 	numRows := (n + numColumns - 1) / numColumns
 
-	for i := 0; i < numRows; i++ {
+	for i := range numRows {
 		for j := 0; j < numColumns; j++ {
 			index := j*numRows + i
 			if index >= n {

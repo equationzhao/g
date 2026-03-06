@@ -12,7 +12,7 @@ func TestOnce_Do(t *testing.T) {
 	wg := sync.WaitGroup{}
 	times := 10
 	wg.Add(times)
-	for i := 0; i < times; i++ {
+	for range times {
 		go func() {
 			defer wg.Done()
 			err := o.Do(func() error {

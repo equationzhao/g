@@ -33,8 +33,8 @@ func (c CommitInfo) GetAuthorDateInFormat(format string) string {
 	if err != nil {
 		return ""
 	}
-	if strings.HasPrefix(format, "+") {
-		return strftime.Format(t, strings.TrimPrefix(format, "+"))
+	if after, ok := strings.CutPrefix(format, "+"); ok {
+		return strftime.Format(t, after)
 	}
 	return t.Format(format)
 }

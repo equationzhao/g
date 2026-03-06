@@ -71,16 +71,16 @@ func TestBasicConverts(t *testing.T) {
 }
 
 func Test256Converts(t *testing.T) {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		_ = c256ToBasic(uint8(i))
 		_ = c256ToRGB(uint8(i))
 	}
 }
 
 func TestRGBConverts(t *testing.T) {
-	for r := 0; r < 10; r++ {
-		for g := 0; g < 10; g++ {
-			for b := 0; b < 10; b++ {
+	for r := range 10 {
+		for g := range 10 {
+			for b := range 10 {
 				_ = RGBToBasic(uint8(r), uint8(g), uint8(b))
 				_ = RGBTo256(uint8(r), uint8(g), uint8(b))
 			}

@@ -186,8 +186,8 @@ var filteringFlag = []cli.Flag{
 		Action: func(ctx *cli.Context, s string) error {
 			possibleTimeFormat := []string{"01-02", "01-02 15:04", "15:04", "2006-01-02", "2006-01-02 15:04", timeFormat}
 			for _, f := range possibleTimeFormat {
-				if strings.HasPrefix(f, "+") {
-					t, err := strftime.Parse(s, strings.TrimPrefix(f, "+"))
+				if after, ok := strings.CutPrefix(f, "+"); ok {
+					t, err := strftime.Parse(s, after)
 					if err != nil {
 						continue
 					}
@@ -219,8 +219,8 @@ var filteringFlag = []cli.Flag{
 		Action: func(ctx *cli.Context, s string) error {
 			possibleTimeFormat := []string{"01-02", "01-02 15:04", "15:04", "2006-01-02", "2006-01-02 15:04", timeFormat}
 			for _, f := range possibleTimeFormat {
-				if strings.HasPrefix(f, "+") {
-					t, err := strftime.Parse(s, strings.TrimPrefix(f, "+"))
+				if after, ok := strings.CutPrefix(f, "+"); ok {
+					t, err := strftime.Parse(s, after)
 					if err != nil {
 						continue
 					}

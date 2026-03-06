@@ -95,7 +95,6 @@ func (cf *ContentFilter) GetDisplayItems(e *[]*item.FileInfo) {
 	wg.Add(len(*e))
 
 	for _, entry := range *e {
-		entry := entry
 		sem <- struct{}{}
 		go func(e *item.FileInfo) {
 			defer wg.Done()

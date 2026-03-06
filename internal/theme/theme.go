@@ -35,11 +35,10 @@ var (
 func genStyleField() []string {
 	genOnceStyleField.Do(func() {
 		// reflect on Style
-		styleType := Style{}
-		styleTypeValue := reflect.TypeOf(styleType)
+		styleTypeValue := reflect.TypeFor[Style]()
 		n := styleTypeValue.NumField()
 		styleField = make([]string, 0, n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			if j := styleTypeValue.Field(i).Tag.Get("json"); j != "" {
 				jName, _, _ := strings.Cut(j, ",")
 				if jName != "" {

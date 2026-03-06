@@ -14,13 +14,17 @@ import (
 func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) string {
 	testDir := filepath.Join(os.TempDir(), dirName)
 	os.RemoveAll(testDir)
-	os.MkdirAll(testDir, 0o755)
+	if err := os.MkdirAll(testDir, 0o755); err != nil {
+		b.Fatalf("failed to create test directory: %v", err)
+	}
 
-	for i := 0; i < numDirs; i++ {
+	for i := range numDirs {
 		subDir := filepath.Join(testDir, "subdir"+string(rune('0'+i%10)))
-		os.MkdirAll(subDir, 0o755)
+		if err := os.MkdirAll(subDir, 0o755); err != nil {
+			b.Fatalf("failed to create subdirectory: %v", err)
+		}
 
-		for j := 0; j < numFiles; j++ {
+		for j := range numFiles {
 			fileName := filepath.Join(subDir, "file"+string(rune('0'+j%10))+".txt")
 			f, _ := os.Create(fileName)
 			f.Close()
@@ -90,7 +94,7 @@ func BenchmarkFileInfoBatch(b *testing.B) {
 func benchmarkFileInfoTraditional(dir string) {
 	entries, _ := os.ReadDir(dir)
 	for _, entry := range entries {
-		entry.Info()                     // Individual system calls
+		_, _ = entry.Info()              // Individual system calls (errors ignored in benchmark)
 		filepath.Join(dir, entry.Name()) // Individual path concatenation
 	}
 }

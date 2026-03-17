@@ -18,7 +18,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.24.0
+          go-version: 1.26.1
 
     - name: Build linux 386
       run: CGO_ENABLED=0 GOOS=linux GOARCH=386 go build
@@ -40,8 +40,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of darwin amd64 binary
@@ -60,7 +58,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.24.0
+          go-version: 1.26.1
 
     - name: Build linux 386
       run: CGO_ENABLED=0 GOOS=linux GOARCH=386 go build
@@ -82,8 +80,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of darwin amd64 binary
@@ -102,7 +98,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.24.0
+          go-version: 1.26.1
 
     - name: Build
       run: go build
@@ -123,7 +119,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.24.0
+          go-version: 1.26.1
 
     - name: Build linux 386
       run: CGO_ENABLED=0 GOOS=linux GOARCH=386 go build
@@ -141,8 +137,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of linux binary

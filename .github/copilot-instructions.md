@@ -7,7 +7,7 @@ g is a feature-rich, customizable, and cross-platform `ls` alternative written i
 ## Working Effectively
 
 ### Prerequisites and Setup
-- Requires Go version >= 1.24.0 (project uses Go 1.24.0)
+- Requires Go version >= 1.26.1 (project uses Go 1.26.1)
 - Works on Linux, Windows, and macOS
 - Repository uses `go mod` for dependency management
 
@@ -15,7 +15,7 @@ g is a feature-rich, customizable, and cross-platform `ls` alternative written i
 **ALWAYS run these commands in sequence for a fresh setup:**
 
 ```bash
-# 1. Verify Go version (must be >= 1.24)
+# 1. Verify Go version (must be >= 1.26.1)
 go version
 
 # 2. Download dependencies and build (NEVER CANCEL: first build takes ~20 seconds)
@@ -172,7 +172,7 @@ cd /tmp && rm -rf g-validation-test
 ### Repository Layout
 ```
 ├── main.go              # Main entry point with panic handling and config loading
-├── go.mod               # Go module definition (requires Go 1.24.0+)
+├── go.mod               # Go module definition (requires Go 1.26.1+)
 ├── justfile             # Build automation (just command) 
 ├── internal/            # Internal Go packages (modular architecture)
 │   ├── cli/            # Command line interface and main logic
@@ -288,10 +288,10 @@ just --list
 ## Troubleshooting
 
 ### Common Issues
-- **"Go version too low"**: Ensure Go >= 1.24.0 is installed
+- **"Go version too low"**: Ensure Go >= 1.26.1 is installed
 - **Build fails**: Run `go mod tidy` to sync dependencies
 - **Tests fail**: Ensure working directory is repository root
-- **Lint fails**: Install golangci-lint compatible with Go 1.24+
+- **Lint fails**: Install golangci-lint compatible with Go 1.26+
 - **Performance regression**: Check if adaptive strategy threshold needs adjustment (see `internal/util/adaptive_strategy.go`)
 - **Benchmark inconsistency**: Ensure proper warmup and sufficient test runs for statistical validity
 
@@ -336,6 +336,6 @@ go test -bench=BenchmarkDive -benchmem ./internal/cli/
 
 ## Version Information
 - Current version: v0.31.0
-- Go version requirement: >= 1.24.0
+- Go version requirement: >= 1.26.1
 - License: MIT License
 - Repository: https://github.com/Equationzhao/g

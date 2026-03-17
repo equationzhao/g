@@ -329,7 +329,7 @@ with install_tabs[1]:
 with install_tabs[2]:
     st.markdown("""
     ### Requirements
-    - Go version >= 1.24
+    - Go version >= 1.26.1
     
     ### Install Latest Version
     ```bash

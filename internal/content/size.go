@@ -239,11 +239,12 @@ func (s *SizeEnabler) Size2String(b int64) (string, SizeUnit) {
 		}
 		for i := Byte; i <= maxUnit; i *= gap {
 			if v < float64(gap) {
-				if i == Byte {
+				switch i {
+				case Byte:
 					res = strconv.FormatInt(int64(v), 10)
-				} else if i == Bit {
+				case Bit:
 					res = strconv.FormatInt(int64(v*8), 10)
-				} else {
+				default:
 					res = strconv.FormatFloat(v, 'f', 1, 64)
 				}
 				if res == "0" || res == "0.0" {

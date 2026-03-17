@@ -49,11 +49,7 @@ var indexFlags = []cli.Flag{
 		Category: "INDEX",
 		Action: func(context *cli.Context, i []string) error {
 			var errSum error = nil
-
-			beautification := true
-			if context.Bool("np") { // --no-path-transform
-				beautification = false
-			}
+			beautification := !context.Bool("np") // --no-path-transform
 
 			for _, s := range i {
 				if beautification {

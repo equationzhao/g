@@ -124,7 +124,9 @@ func (b *Byline) Print(i ...*item.FileInfo) {
 	if !b.disableBefore {
 		fire(b.BeforePrint, b, i...)
 	}
-	defer b.Flush()
+	defer func() {
+		_ = b.Flush()
+	}()
 	for _, v := range i {
 		_, _ = b.WriteString(v.OrderedContent(" "))
 		_ = b.WriteByte('\n') // byline means a new line :)
@@ -152,7 +154,9 @@ func (f *FitTerminal) Print(i ...*item.FileInfo) {
 	if !f.disableBefore {
 		fire(f.BeforePrint, f, i...)
 	}
-	defer f.Flush()
+	defer func() {
+		_ = f.Flush()
+	}()
 	s := make([]string, 0, len(i))
 	for _, v := range i {
 		s = append(s, v.OrderedContent(" "))
@@ -322,7 +326,9 @@ func (c *CommaPrint) Print(items ...*item.FileInfo) {
 	if !c.disableBefore {
 		fire(c.BeforePrint, c, items...)
 	}
-	defer c.Flush()
+	defer func() {
+		_ = c.Flush()
+	}()
 	s := make([]string, 0, len(items))
 	for i, v := range items {
 		if i != len(items)-1 {
@@ -353,7 +359,9 @@ func (a *Across) Print(items ...*item.FileInfo) {
 	if !a.disableBefore {
 		fire(a.BeforePrint, a, items...)
 	}
-	defer a.Flush()
+	defer func() {
+		_ = a.Flush()
+	}()
 	s := make([]string, 0, len(items))
 	for _, v := range items {
 		s = append(s, v.OrderedContent(" "))
@@ -365,7 +373,9 @@ func (a *Across) Print(items ...*item.FileInfo) {
 }
 
 func (a *Across) printRowWithNoSpace(strs []string) {
-	defer a.Flush()
+	defer func() {
+		_ = a.Flush()
+	}()
 	width := getTermWidth() - 5
 
 	maxLength := 0
@@ -456,7 +466,9 @@ func (z *Zero) Print(items ...*item.FileInfo) {
 	if !z.disableBefore {
 		fire(z.BeforePrint, z, items...)
 	}
-	defer z.Flush()
+	defer func() {
+		_ = z.Flush()
+	}()
 	for _, v := range items {
 		_, _ = z.WriteString(v.OrderedContent(" "))
 	}
@@ -489,7 +501,9 @@ func (j *JsonPrinter) Print(items ...*item.FileInfo) {
 	if !j.disableBefore {
 		fire(j.BeforePrint, j, items...)
 	}
-	defer j.Flush()
+	defer func() {
+		_ = j.Flush()
+	}()
 
 	list := make([]*orderedmap.OrderedMap[string, string], 0, len(items))
 	for _, v := range items {
@@ -591,7 +605,9 @@ func (t *TablePrinter) PrintBase(fn func() string, s ...*item.FileInfo) {
 	if !t.disableBefore {
 		fire(t.BeforePrint, t, s...)
 	}
-	defer t.Flush()
+	defer func() {
+		_ = t.Flush()
+	}()
 	t.w.ResetRows()
 	t.setTB(s...)
 	if len(t.header) != 0 {
@@ -706,10 +722,12 @@ func NewTreePrinter() *TreePrinter {
 }
 
 func (t *TreePrinter) Print(s ...*item.FileInfo) {
-	if !t.hook.disableBefore {
+	if !t.disableBefore {
 		fire(t.BeforePrint, t, s...)
 	}
-	defer t.Flush()
+	defer func() {
+		_ = t.Flush()
+	}()
 
 	// split by full path
 	// the item sharing the same dir will be grouped together
@@ -797,7 +815,7 @@ func (t *TreePrinter) Print(s ...*item.FileInfo) {
 	}
 
 	printTree(buildTree.Root, true, true)
-	if !t.hook.disableAfter {
+	if !t.disableAfter {
 		fire(t.AfterPrint, t, s...)
 	}
 }

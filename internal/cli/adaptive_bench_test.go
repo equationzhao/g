@@ -11,7 +11,9 @@ import (
 // setupAdaptiveTestDir creates test directories of different sizes
 func setupAdaptiveTestDir(tb testing.TB, dirName string, numFiles int) string {
 	testDir := filepath.Join(os.TempDir(), dirName)
-	os.RemoveAll(testDir)
+	if err := os.RemoveAll(testDir); err != nil {
+		tb.Fatalf("failed to clean test directory: %v", err)
+	}
 	if err := os.MkdirAll(testDir, 0o755); err != nil {
 		tb.Fatalf("failed to create test directory: %v", err)
 	}
@@ -25,7 +27,9 @@ func setupAdaptiveTestDir(tb testing.TB, dirName string, numFiles int) string {
 		if _, err := f.WriteString("test content"); err != nil {
 			tb.Fatalf("failed to write test content: %v", err)
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			tb.Fatalf("failed to close test file: %v", err)
+		}
 	}
 
 	return testDir
@@ -34,7 +38,9 @@ func setupAdaptiveTestDir(tb testing.TB, dirName string, numFiles int) string {
 // BenchmarkAdaptiveStrategy_SmallDir tests adaptive strategy on small directories
 func BenchmarkAdaptiveStrategy_SmallDir(b *testing.B) {
 	testDir := setupAdaptiveTestDir(b, "adaptive_small", 25) // Below 50-file threshold
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -50,7 +56,9 @@ func BenchmarkAdaptiveStrategy_SmallDir(b *testing.B) {
 // BenchmarkAdaptiveStrategy_LargeDir tests adaptive strategy on large directories
 func BenchmarkAdaptiveStrategy_LargeDir(b *testing.B) {
 	testDir := setupAdaptiveTestDir(b, "adaptive_large", 200) // Above 50-file threshold
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -66,7 +74,9 @@ func BenchmarkAdaptiveStrategy_LargeDir(b *testing.B) {
 // BenchmarkAdaptiveStrategy_JSON tests adaptive strategy with JSON output
 func BenchmarkAdaptiveStrategy_JSON(b *testing.B) {
 	testDir := setupAdaptiveTestDir(b, "adaptive_json", 200) // Large dir but JSON format
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -85,7 +95,9 @@ func TestAdaptiveStrategy_DecisionLogic(t *testing.T) {
 
 	// Test small directory - should use traditional
 	smallDir := setupAdaptiveTestDir(t, "test_small", 25)
-	defer os.RemoveAll(smallDir)
+	defer func() {
+		_ = os.RemoveAll(smallDir)
+	}()
 
 	// Debug info
 	estimatedSize := strategy.EstimateDirectorySize(smallDir)
@@ -98,7 +110,9 @@ func TestAdaptiveStrategy_DecisionLogic(t *testing.T) {
 
 	// Test large directory - should use batch
 	largeDir := setupAdaptiveTestDir(t, "test_large", 100)
-	defer os.RemoveAll(largeDir)
+	defer func() {
+		_ = os.RemoveAll(largeDir)
+	}()
 
 	estimatedSize = strategy.EstimateDirectorySize(largeDir)
 	t.Logf("Large dir estimated size: %d, threshold: 50", estimatedSize)

@@ -171,7 +171,9 @@ func readCrucialBytes(filePath string, fileSize int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	firstBytes := make([]byte, thresholdFileSize/2)
 	_, fErr := file.ReadAt(firstBytes, 0)

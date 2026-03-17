@@ -38,7 +38,9 @@ func getFlags(filename string) uint32 {
 	if err != nil {
 		return 0
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	fileInfo, err := file.Stat()
 	if err != nil {

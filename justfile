@@ -43,7 +43,6 @@ build:
     CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build {{ldflags}} -tags="fuzzy mounts" -o build/g-windows-amd64.exe
     CGO_ENABLED=0 GOOS=windows GOARCH=386   go build {{ldflags}} -tags="fuzzy mounts" -o build/g-windows-386.exe
     CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build {{ldflags}} -tags="fuzzy mounts" -o build/g-windows-arm64.exe
-    CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build {{ldflags}} -tags="fuzzy mounts" -o build/g-windows-arm.exe
 
     upx --best build/g-linux-386
     upx --best build/g-linux-amd64
@@ -51,12 +50,11 @@ build:
     upx --best build/g-linux-arm64
     upx --best build/g-windows-amd64.exe
     upx --best build/g-windows-386.exe
-#    upx doesn't support darwin-amd64, darwin-arm64, linux-loong64, windows-arm64, windows-arm
+#    upx doesn't support darwin-amd64, darwin-arm64, linux-loong64, windows-arm64
 #    upx build/g-darwin-amd64
 #    upx build/g-darwin-arm64
 #    upx build/g-linux-loong64
 #    upx build/g-windows-arm64.exe
-#    upx build/g-windows-arm.exe
 
 # compress the binaries for all platforms
 compress: 
@@ -73,7 +71,6 @@ compress:
     zip -r build/g-Windows-amd64.zip build/g-windows-amd64.exe
     zip -r build/g-Windows-386.zip build/g-windows-386.exe
     zip -r build/g-Windows-arm64.zip build/g-windows-arm64.exe
-    zip -r build/g-Windows-arm.zip build/g-windows-arm.exe
 
 # build deb package for all ARCH
 deb: 

@@ -40,8 +40,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of darwin amd64 binary
@@ -82,8 +80,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of darwin amd64 binary
@@ -141,8 +137,6 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build
     - name: Build windows arm64
       run: CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build
-    - name: Build windows arm
-      run: CGO_ENABLED=0 GOOS=windows GOARCH=arm   go build
     - name: Run tests
       run: go test -v ./...
     - name: Check size of linux binary

@@ -30,7 +30,7 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 ```shell
 git clone git@github.com:yourname/g.git
 ```
-2. Make sure you have installed **go**, and go version >= 1.24.0 .
+2. Make sure you have installed **go**, and go version >= 1.26.1 .
 ```shell
 go version
 ```

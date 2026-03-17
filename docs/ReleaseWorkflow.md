@@ -10,7 +10,7 @@ software/toolchain:
 
 | name          | how to install               | remark                                                                            |
 |---------------|------------------------------|-----------------------------------------------------------------------------------|
-| go >1.24.0    | `brew install go`            | or use [go.dev](https://go.dev/dl/) / [goup](https://github.com/owenthereal/goup) |
+| go >=1.26.1   | `brew install go`            | or use [go.dev](https://go.dev/dl/) / [goup](https://github.com/owenthereal/goup) |
 | git           | `brew install git`           | or use xcode version                                                              |
 | upx           | `brew install upx`           |                                                                                   |
 | dpkg-deb      | `brew install dpkg`          |                                                                                   |

@@ -52,7 +52,9 @@ func (s SumEnabler) EnableSum(renderer *render.Renderer, sumTypes ...SumType) []
 					return "", string(sumType)
 				}
 				info.Cache["content"] = content
-				defer file.Close()
+				defer func() {
+					_ = file.Close()
+				}()
 			}
 
 			var hashed hash.Hash

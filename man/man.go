@@ -14,7 +14,9 @@ func GenMan() {
 	s, _ := cli.G.ToMan()
 	// compress to gzip
 	manGz := gzip.NewWriter(man)
-	defer manGz.Close()
+	defer func() {
+		_ = manGz.Close()
+	}()
 	_, _ = manGz.Write([]byte(s))
 	_ = manGz.Flush()
 }

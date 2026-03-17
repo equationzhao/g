@@ -13,7 +13,9 @@ import (
 // setupBenchmarkDir creates test directory structure for benchmarking
 func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) string {
 	testDir := filepath.Join(os.TempDir(), dirName)
-	os.RemoveAll(testDir)
+	if err := os.RemoveAll(testDir); err != nil {
+		b.Fatalf("failed to clean test directory: %v", err)
+	}
 	if err := os.MkdirAll(testDir, 0o755); err != nil {
 		b.Fatalf("failed to create test directory: %v", err)
 	}
@@ -26,8 +28,13 @@ func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) stri
 
 		for j := range numFiles {
 			fileName := filepath.Join(subDir, "file"+string(rune('0'+j%10))+".txt")
-			f, _ := os.Create(fileName)
-			f.Close()
+			f, err := os.Create(fileName)
+			if err != nil {
+				b.Fatalf("failed to create test file: %v", err)
+			}
+			if err := f.Close(); err != nil {
+				b.Fatalf("failed to close test file: %v", err)
+			}
 		}
 	}
 
@@ -37,7 +44,9 @@ func setupBenchmarkDir(b *testing.B, dirName string, numDirs, numFiles int) stri
 // BenchmarkDive_Original tests the performance of the original dive function
 func BenchmarkDive_Original(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_original", 10, 50)
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -55,7 +64,9 @@ func BenchmarkDive_Original(b *testing.B) {
 // BenchmarkDive_Optimized tests the performance of the optimized dive function
 func BenchmarkDive_Optimized(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_optimized", 10, 50)
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -73,7 +84,9 @@ func BenchmarkDive_Optimized(b *testing.B) {
 // BenchmarkFileInfoBatch compares traditional vs batched file info retrieval
 func BenchmarkFileInfoBatch(b *testing.B) {
 	testDir := setupBenchmarkDir(b, "bench_batch", 1, 100)
-	defer os.RemoveAll(testDir)
+	defer func() {
+		_ = os.RemoveAll(testDir)
+	}()
 
 	b.Run("Traditional", func(b *testing.B) {
 		b.ReportAllocs()

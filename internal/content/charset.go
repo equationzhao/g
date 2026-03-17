@@ -75,7 +75,9 @@ func readFileContent(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	content := make([]byte, 1024*1024)
 	_, err = file.Read(content)

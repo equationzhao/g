@@ -52,14 +52,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          chmod +x script/install_dev_requirement.sh
-          chmod +x script/base.sh
           HOMEBREW_NO_AUTO_UPDATE=1 ./script/install_dev_requirement.sh
 
       - name: Get current version
         id: version
         run: |
-          CURRENT_VERSION=$(grep 'Version' internal/cli/version.go | awk '{print $3}' | sed 's/"//g')
+          CURRENT_VERSION=$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' internal/cli/version.go | head -n1)
           echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
 
@@ -87,17 +85,19 @@ jobs:
           echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
-      - name: Update version in version.go
+      - name: Update version files
         run: |
           sed -i '' 's/var Version = "${{ steps.version.outputs.current }}"/var Version = "${{ steps.calculate.outputs.new }}"/' internal/cli/version.go
+          sed -E -i '' 's/^version="[0-9]+\.[0-9]+\.[0-9]+"$/version="${{ steps.calculate.outputs.new }}"/' script/install.sh
           cat internal/cli/version.go
+          grep '^version="' script/install.sh
 
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit version change
+      - name: Commit version change locally
         run: |
           case "${{ github.event.inputs.version_type }}" in
             patch)
@@ -110,14 +110,12 @@ jobs:
               COMMIT_MSG=":bookmark: new major version"
               ;;
           esac
-          git add internal/cli/version.go
+          git add internal/cli/version.go script/install.sh
           git commit -m "$COMMIT_MSG"
-          git push origin master
 
-      - name: Create and push tag
+      - name: Create local tag
         run: |
           git tag "v${{ steps.calculate.outputs.new }}"
-          git push origin "v${{ steps.calculate.outputs.new }}"
 
       - name: Precheck
         run: |
@@ -138,6 +136,11 @@ jobs:
       - name: Generate release files
         run: |
           just genrelease
+
+      - name: Push commit and tag
+        run: |
+          git push origin master
+          git push origin "v${{ steps.calculate.outputs.new }}"
 
       - name: Create Release
         env:

@@ -97,7 +97,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit version change locally
+      - name: Precheck
+        run: |
+          just precheck
+
+      - name: Generate docs
+        run: |
+          just gendocs
+
+      - name: Run tests
+        run: |
+          just test
+
+      - name: Commit release changes locally
         run: |
           case "${{ github.event.inputs.version_type }}" in
             patch)
@@ -110,24 +122,12 @@ jobs:
               COMMIT_MSG=":bookmark: new major version"
               ;;
           esac
-          git add internal/cli/version.go script/install.sh
+          git add -A
           git commit -m "$COMMIT_MSG"
 
       - name: Create local tag
         run: |
           git tag "v${{ steps.calculate.outputs.new }}"
-
-      - name: Precheck
-        run: |
-          just precheck
-
-      - name: Generate docs
-        run: |
-          just gendocs
-
-      - name: Run tests
-        run: |
-          just test
 
       - name: Check version
         run: |

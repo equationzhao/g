@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Equationzhao/g/internal/cli"
 )
@@ -14,6 +15,7 @@ func GenMan() {
 	s, _ := cli.G.ToMan()
 	// compress to gzip
 	manGz := gzip.NewWriter(man)
+	manGz.ModTime = time.Unix(0, 0)
 	defer func() {
 		_ = manGz.Close()
 	}()

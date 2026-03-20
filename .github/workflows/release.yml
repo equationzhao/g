@@ -1,4 +1,4 @@
-name: Release
+name: Prepare Release
 
 on:
   workflow_dispatch:
@@ -19,9 +19,10 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  release:
+  prepare-release:
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -85,6 +86,13 @@ jobs:
           echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
+      - name: Set release branch
+        id: branch
+        run: |
+          BRANCH_NAME="codex/release-v${{ steps.calculate.outputs.new }}-${{ github.run_id }}"
+          echo "name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
+
       - name: Update version files
         run: |
           sed -i '' 's/var Version = "${{ steps.version.outputs.current }}"/var Version = "${{ steps.calculate.outputs.new }}"/' internal/cli/version.go
@@ -96,26 +104,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Commit version change locally
-        run: |
-          case "${{ github.event.inputs.version_type }}" in
-            patch)
-              COMMIT_MSG=":bookmark: new patch version"
-              ;;
-            minor)
-              COMMIT_MSG=":bookmark: new minor version"
-              ;;
-            major)
-              COMMIT_MSG=":bookmark: new major version"
-              ;;
-          esac
-          git add internal/cli/version.go script/install.sh
-          git commit -m "$COMMIT_MSG"
-
-      - name: Create local tag
-        run: |
-          git tag "v${{ steps.calculate.outputs.new }}"
 
       - name: Precheck
         run: |
@@ -129,32 +117,66 @@ jobs:
         run: |
           just test
 
-      - name: Check version
+      - name: Validate release metadata
         run: |
-          just check
+          VERSION_IN_GO=$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' internal/cli/version.go | head -n1)
+          VERSION_IN_SCRIPT=$(sh ./script/install.sh -v)
 
-      - name: Generate release files
+          if [ "$VERSION_IN_GO" != "${{ steps.calculate.outputs.new }}" ]; then
+            echo "internal/cli/version.go version mismatch: $VERSION_IN_GO"
+            exit 1
+          fi
+
+          if [ "$VERSION_IN_SCRIPT" != "${{ steps.calculate.outputs.new }}" ]; then
+            echo "script/install.sh version mismatch: $VERSION_IN_SCRIPT"
+            exit 1
+          fi
+
+      - name: Commit release changes to branch
         run: |
-          just genrelease
+          case "${{ github.event.inputs.version_type }}" in
+            patch)
+              COMMIT_MSG=":bookmark: new patch version"
+              ;;
+            minor)
+              COMMIT_MSG=":bookmark: new minor version"
+              ;;
+            major)
+              COMMIT_MSG=":bookmark: new major version"
+              ;;
+          esac
+          git checkout -b "${{ steps.branch.outputs.name }}"
+          git add -A
+          git commit -m "$COMMIT_MSG"
+          git push --set-upstream origin "${{ steps.branch.outputs.name }}"
 
-      - name: Push commit and tag
-        run: |
-          git push origin master
-          git push origin "v${{ steps.calculate.outputs.new }}"
-
-      - name: Create Release
+      - name: Create release pull request
+        id: pr
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ github.event.inputs.pre_release }}" = "true" ]; then
-            gh release create "v${{ steps.calculate.outputs.new }}" \
-              --prerelease \
-              --title "v${{ steps.calculate.outputs.new }}" \
-              --notes "Release v${{ steps.calculate.outputs.new }}" \
-              build/*
-          else
-            gh release create "v${{ steps.calculate.outputs.new }}" \
-              --title "v${{ steps.calculate.outputs.new }}" \
-              --notes "Release v${{ steps.calculate.outputs.new }}" \
-              build/*
-          fi
+          PR_BODY=$(cat <<EOF
+          Automated release PR for v${{ steps.calculate.outputs.new }}.
+
+          Release-Version: ${{ steps.calculate.outputs.new }}
+          Pre-Release: ${{ github.event.inputs.pre_release }}
+
+          After this PR is merged into master, the publish workflow will create the git tag and GitHub Release.
+          EOF
+          )
+
+          PR_URL=$(gh pr create \
+            --base master \
+            --head "${{ steps.branch.outputs.name }}" \
+            --title "Release v${{ steps.calculate.outputs.new }}" \
+            --body "$PR_BODY")
+
+          echo "url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "Created PR: $PR_URL"
+
+      - name: Write summary
+        run: |
+          {
+            echo "Release PR created:"
+            echo "${{ steps.pr.outputs.url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

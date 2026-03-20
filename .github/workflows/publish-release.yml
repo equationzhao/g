@@ -1,0 +1,142 @@
+name: Publish Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  detect-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.detect.outputs.release }}
+      version: ${{ steps.detect.outputs.version }}
+      pre_release: ${{ steps.detect.outputs.pre_release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect release metadata
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' internal/cli/version.go | head -n1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+            -H "Accept: application/vnd.github+json")
+          PR_BODY=$(printf '%s' "$PR_JSON" | jq -r '.[0].body // ""')
+          EXPECTED_VERSION=$(printf '%s\n' "$PR_BODY" | sed -n 's/^Release-Version: //p' | head -n1)
+          PRE_RELEASE=$(printf '%s\n' "$PR_BODY" | sed -n 's/^Pre-Release: //p' | head -n1 | tr '[:upper:]' '[:lower:]')
+
+          if [ -z "$EXPECTED_VERSION" ]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "pre_release=false" >> "$GITHUB_OUTPUT"
+            echo "No release metadata found for commit ${{ github.sha }}."
+            exit 0
+          fi
+
+          if [ "$EXPECTED_VERSION" != "$VERSION" ]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "pre_release=false" >> "$GITHUB_OUTPUT"
+            echo "Release metadata version mismatch: expected $EXPECTED_VERSION, found $VERSION."
+            exit 0
+          fi
+
+          if [ -z "$PRE_RELEASE" ]; then
+            PRE_RELEASE=false
+          fi
+
+          echo "release=true" >> "$GITHUB_OUTPUT"
+          echo "pre_release=$PRE_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "Release commit detected for version $VERSION."
+
+  publish-release:
+    runs-on: macos-latest
+    needs: detect-release
+    if: needs.detect-release.outputs.release == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.26.1
+          cache: true
+
+      - name: Setup Homebrew cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/homebrew/bin
+            /opt/homebrew/lib
+            /usr/local/bin
+            /usr/local/lib
+            ~/Library/Caches/Homebrew
+            /home/linuxbrew/.linuxbrew
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('script/install_dev_requirement.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+
+      - name: Install dependencies
+        run: |
+          HOMEBREW_NO_AUTO_UPDATE=1 ./script/install_dev_requirement.sh
+
+      - name: Create local release tag
+        run: |
+          VERSION="${{ needs.detect-release.outputs.version }}"
+          TAG="v$VERSION"
+
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            if [ "$(git rev-parse HEAD)" != "$(git rev-parse "$TAG")" ]; then
+              echo "Existing tag $TAG does not point to the current HEAD."
+              exit 1
+            fi
+          else
+            git tag "$TAG"
+          fi
+
+      - name: Check version
+        run: |
+          just check
+
+      - name: Generate release files
+        run: |
+          just genrelease
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.detect-release.outputs.version }}"
+
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists."
+            exit 0
+          fi
+
+          if [ "${{ needs.detect-release.outputs.pre_release }}" = "true" ]; then
+            gh release create "v$VERSION" \
+              --prerelease \
+              --target "${{ github.sha }}" \
+              --title "v$VERSION" \
+              --notes "Release v$VERSION" \
+              build/*
+          else
+            gh release create "v$VERSION" \
+              --target "${{ github.sha }}" \
+              --title "v$VERSION" \
+              --notes "Release v$VERSION" \
+              build/*
+          fi

@@ -26,6 +26,18 @@ Experience enhanced visuals with type-specific icons, various layout options, an
 
 ![image](asset/screenshot_3.png)
 
+## Landing Page
+
+The repository now includes a GitHub Pages landing page in [`web/`](web/).
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Production URL: `https://equationzhao.github.io/g/`
+
 ## Usage
 
 ```bash

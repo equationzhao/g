@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: read
 
 jobs:
   detect-release:
@@ -24,22 +24,18 @@ jobs:
 
       - name: Detect release metadata
         id: detect
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' internal/cli/version.go | head -n1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
-            -H "Accept: application/vnd.github+json")
-          PR_BODY=$(printf '%s' "$PR_JSON" | jq -r '.[0].body // ""')
-          EXPECTED_VERSION=$(printf '%s\n' "$PR_BODY" | sed -n 's/^Release-Version: //p' | head -n1)
-          PRE_RELEASE=$(printf '%s\n' "$PR_BODY" | sed -n 's/^Pre-Release: //p' | head -n1 | tr '[:upper:]' '[:lower:]')
+          COMMIT_BODY=$(git log -1 --format=%B "${GITHUB_SHA}")
+          EXPECTED_VERSION=$(printf '%s\n' "$COMMIT_BODY" | sed -n 's/^Release-Version: //p' | head -n1)
+          PRE_RELEASE=$(printf '%s\n' "$COMMIT_BODY" | sed -n 's/^Pre-Release: //p' | head -n1 | tr '[:upper:]' '[:lower:]')
 
           if [ -z "$EXPECTED_VERSION" ]; then
             echo "release=false" >> "$GITHUB_OUTPUT"
             echo "pre_release=false" >> "$GITHUB_OUTPUT"
-            echo "No release metadata found for commit ${{ github.sha }}."
+            echo "No release metadata found in commit ${GITHUB_SHA}."
             exit 0
           fi
 

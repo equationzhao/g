@@ -1,3 +1,5 @@
+//go:build !doc
+
 package main
 
 import (
@@ -11,9 +13,7 @@ import (
 	"github.com/Equationzhao/g/internal/cli"
 	"github.com/Equationzhao/g/internal/config"
 	debugSetting "github.com/Equationzhao/g/internal/global/debug"
-	"github.com/Equationzhao/g/internal/global/doc"
 	"github.com/Equationzhao/g/internal/util"
-	"github.com/Equationzhao/g/man"
 	ucli "github.com/urfave/cli/v2"
 )
 
@@ -24,19 +24,14 @@ func main() {
 			catchPanic(recover())
 		}
 	}()
-	// when build with tag `doc`, generate md and man file
-	if doc.Enable {
-		man.GenMan()
-	} else {
-		preprocessArgs()
-		err := cli.G.Run(os.Args)
-		if err != nil {
-			if !errors.Is(err, cli.Err4Exit{}) {
-				if cli.ReturnCode == 0 {
-					cli.ReturnCode = 1
-				}
-				_, _ = fmt.Fprintln(os.Stderr, cli.MakeErrorStr(err.Error()))
+	preprocessArgs()
+	err := cli.G.Run(os.Args)
+	if err != nil {
+		if !errors.Is(err, cli.Err4Exit{}) {
+			if cli.ReturnCode == 0 {
+				cli.ReturnCode = 1
 			}
+			_, _ = fmt.Fprintln(os.Stderr, cli.MakeErrorStr(err.Error()))
 		}
 	}
 }

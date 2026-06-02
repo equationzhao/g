@@ -422,7 +422,7 @@ func (n *Name) Enable(renderer *render.Renderer) ContentOption {
 
 		name = util.Escape(name)
 
-		if n.Party && color != "" {
+		if n.Party && theme.ColorLevel != theme.None {
 			color = partyColor(int(n.partyIndex.Add(1) - 1))
 		}
 

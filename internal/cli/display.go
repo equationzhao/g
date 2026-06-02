@@ -381,6 +381,13 @@ var displayFlag = []cli.Flag{
 		Category: "DISPLAY",
 	},
 	&cli.BoolFlag{
+		Name:               "party",
+		Aliases:            []string{"disco"},
+		Usage:              "rainbow party mode — each file gets a unique color",
+		DisableDefaultText: true,
+		Category:           "DISPLAY",
+	},
+	&cli.BoolFlag{
 		Name:               "classic",
 		Usage:              "enable classic mode (no colors or icons)",
 		DisableDefaultText: true,

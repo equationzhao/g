@@ -456,6 +456,9 @@ var logic = func(context *cli.Context) error {
 	if _, ok := p.(*display.JsonPrinter); ok {
 		nameToDisplay.SetJson()
 	}
+	if context.Bool("party") {
+		nameToDisplay.SetParty()
+	}
 	git := context.Bool("git")
 	if git {
 		contentFunc = append(contentFunc, gitEnabler.Enable(r))

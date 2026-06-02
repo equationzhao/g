@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,8 @@ type Name struct {
 	relativeTo                                                               string
 	Quote                                                                    string
 	QuoteStatus                                                              int8 // >1 always quote || =0 default || <0 never quote
+	Party                                                                    bool
+	partyIndex                                                               atomic.Uint64
 }
 
 func neverQuote(qs int8) bool {
@@ -141,6 +144,16 @@ func (n *Name) UnsetQuote() *Name {
 	return n
 }
 
+func (n *Name) SetParty() *Name {
+	n.Party = true
+	return n
+}
+
+func (n *Name) UnsetParty() *Name {
+	n.Party = false
+	return n
+}
+
 func (n *Name) UnsetIcon() *Name {
 	n.icon = false
 	return n
@@ -209,6 +222,25 @@ Enable
 color + icon + file://quote+filename/relative-name+quote + classify + color-end + dereference + mounts
 color: filetype->filename->fileext->file
 */
+
+func partyColor(index int) string {
+	const goldenAngle = 137.507764 // 180° * (3 - sqrt(5))
+	hue := math.Mod(float64(index)*goldenAngle, 360)
+	r, g, b := theme.HslToRgb(hue, 1.0, 0.5)
+
+	switch theme.ColorLevel {
+	case theme.TrueColor:
+		rgbStr, _ := theme.RGB(r, g, b)
+		return rgbStr
+	case theme.C256:
+		return theme.RGBTo256(r, g, b)
+	case theme.Ascii:
+		return theme.RGBToBasic(r, g, b)
+	default:
+		return ""
+	}
+}
+
 func (n *Name) Enable(renderer *render.Renderer) ContentOption {
 	return func(info *item.FileInfo) (stringContent, funcName string) {
 		name, color, icon, classify, mounts := info.Name(), "", "", "", ""
@@ -389,6 +421,10 @@ func (n *Name) Enable(renderer *render.Renderer) ContentOption {
 		}
 
 		name = util.Escape(name)
+
+		if n.Party && theme.ColorLevel != theme.None {
+			color = partyColor(int(n.partyIndex.Add(1) - 1))
+		}
 
 		b := bytebufferpool.Get()
 		defer bytebufferpool.Put(b)

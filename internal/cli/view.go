@@ -50,28 +50,28 @@ var viewFlag = []cli.Flag{
 		DisableDefaultText: true,
 		Category:           "VIEW",
 	},
-		&cli.StringSliceFlag{
-			Name:    "time-type",
-			Usage:   "time type, mod(default), create, access, all, birth[macOS only]",
-			EnvVars: []string{"TIME_TYPE"},
-			Action: func(context *cli.Context, ss []string) error {
-				_ = context.Set("time", "1")
-				timeType = make([]string, 0, len(ss))
-				for _, s := range ss {
-					normalized, ok := normalizeTimeType(s)
-					if !ok {
-						ReturnCode = 2
-						return errors.New("invalid time type")
-					}
-					if normalized == "" {
-						timeType = []string{"mod", "create", "access"}
-						continue
-					}
-					timeType = append(timeType, normalized)
+	&cli.StringSliceFlag{
+		Name:    "time-type",
+		Usage:   "time type, mod(default), create, access, all, birth[macOS only]",
+		EnvVars: []string{"TIME_TYPE"},
+		Action: func(context *cli.Context, ss []string) error {
+			_ = context.Set("time", "1")
+			timeType = make([]string, 0, len(ss))
+			for _, s := range ss {
+				normalized, ok := normalizeTimeType(s)
+				if !ok {
+					ReturnCode = 2
+					return errors.New("invalid time type")
 				}
-				return nil
-			},
-			Category: "VIEW",
+				if normalized == "" {
+					timeType = []string{"mod", "create", "access"}
+					continue
+				}
+				timeType = append(timeType, normalized)
+			}
+			return nil
+		},
+		Category: "VIEW",
 	},
 	&cli.BoolFlag{
 		Name:               "access",

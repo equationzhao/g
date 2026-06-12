@@ -20,7 +20,7 @@ type testFileInfo struct {
 func (t testFileInfo) Name() string       { return t.name }
 func (t testFileInfo) Size() int64        { return t.size }
 func (t testFileInfo) Mode() os.FileMode  { return t.mode }
-func (t testFileInfo) ModTime() time.Time  { return t.modTime }
+func (t testFileInfo) ModTime() time.Time { return t.modTime }
 func (t testFileInfo) IsDir() bool        { return t.mode.IsDir() }
 func (t testFileInfo) Sys() any           { return nil }
 

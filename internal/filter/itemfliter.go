@@ -3,7 +3,6 @@ package filter
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -279,12 +278,7 @@ func WhichTimeFiled(mod string) (t func(os.FileInfo) time.Time) {
 	case "access", "ac":
 		t = osbased.AccessTime
 	case "birth":
-		// if darwin, check birth time
-		if runtime.GOOS == "darwin" {
-			t = osbased.BirthTime
-		} else {
-			t = osbased.CreateTime
-		}
+		t = osbased.BirthTime
 	}
 	return t
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"slices"
 	"strings"
 
 	contents "github.com/Equationzhao/g/internal/content"
@@ -58,16 +57,17 @@ var viewFlag = []cli.Flag{
 		Action: func(context *cli.Context, ss []string) error {
 			_ = context.Set("time", "1")
 			timeType = make([]string, 0, len(ss))
-			accepts := []string{"mod", "modified", "create", "cr", "access", "ac", "birth"}
 			for _, s := range ss {
-				if slices.Contains(accepts, strings.ToLower(s)) {
-					timeType = append(timeType, s)
-				} else if s == "all" {
-					timeType = []string{"mod", "create", "access"}
-				} else {
+				normalized, ok := normalizeTimeType(s)
+				if !ok {
 					ReturnCode = 2
 					return errors.New("invalid time type")
 				}
+				if normalized == "" {
+					timeType = append(timeType, "mod", "create", "access")
+					continue
+				}
+				timeType = append(timeType, normalized)
 			}
 			return nil
 		},
@@ -811,6 +811,23 @@ var viewFlag = []cli.Flag{
 		DisableDefaultText: true,
 		Category:           "VIEW",
 	},
+}
+
+func normalizeTimeType(s string) (string, bool) {
+	switch strings.ToLower(s) {
+	case "mod", "modified":
+		return "mod", true
+	case "create", "cr":
+		return "create", true
+	case "access", "ac":
+		return "access", true
+	case "birth":
+		return "birth", true
+	case "all":
+		return "", true
+	default:
+		return "", false
+	}
 }
 
 func setLimit() {

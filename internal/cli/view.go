@@ -57,18 +57,18 @@ var viewFlag = []cli.Flag{
 		Action: func(context *cli.Context, ss []string) error {
 			_ = context.Set("time", "1")
 			timeType = make([]string, 0, len(ss))
-			for _, s := range ss {
-				normalized, ok := normalizeTimeType(s)
-				if !ok {
-					ReturnCode = 2
-					return errors.New("invalid time type")
+				for _, s := range ss {
+					normalized, ok := normalizeTimeType(s)
+					if !ok {
+						ReturnCode = 2
+						return errors.New("invalid time type")
+					}
+					if normalized == "" {
+						timeType = append(timeType, "mod", "create", "access")
+						continue
+					}
+					timeType = append(timeType, normalized)
 				}
-				if normalized == "" {
-					timeType = []string{"mod", "create", "access"}
-					continue
-				}
-				timeType = append(timeType, normalized)
-			}
 			return nil
 		},
 		Category: "VIEW",

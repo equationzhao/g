@@ -10,6 +10,7 @@ import (
 	"github.com/Equationzhao/g/internal/config"
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	ucli "github.com/urfave/cli/v2"
 )
 
@@ -277,4 +278,33 @@ func Test_main(t *testing.T) {
 	defer patch.Reset()
 	os.Args = []string{"g", "."}
 	main()
+}
+
+func Test_main_TimeTypeAliasesWithFilters(t *testing.T) {
+	patch := gomonkey.ApplyFunc(os.Exit, func(int) {})
+	defer patch.Reset()
+
+	tmp := t.TempDir()
+	origWD, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(tmp))
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{name: "after", args: []string{"g", "-no-config", "-A", "--time-type", "modified", "--after", "2000-01-01", "."}},
+		{name: "before", args: []string{"g", "-no-config", "-A", "--time-type", "modified", "--before", "2999-01-01", "."}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+			cli.ReturnCode = 0
+			main()
+		})
+	}
 }

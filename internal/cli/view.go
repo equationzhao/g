@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"slices"
 	"strings"
 
 	contents "github.com/Equationzhao/g/internal/content"
@@ -51,27 +50,28 @@ var viewFlag = []cli.Flag{
 		DisableDefaultText: true,
 		Category:           "VIEW",
 	},
-	&cli.StringSliceFlag{
-		Name:    "time-type",
-		Usage:   "time type, mod(default), create, access, all, birth[macOS only]",
-		EnvVars: []string{"TIME_TYPE"},
-		Action: func(context *cli.Context, ss []string) error {
-			_ = context.Set("time", "1")
-			timeType = make([]string, 0, len(ss))
-			accepts := []string{"mod", "modified", "create", "cr", "access", "ac", "birth"}
-			for _, s := range ss {
-				if slices.Contains(accepts, strings.ToLower(s)) {
-					timeType = append(timeType, s)
-				} else if s == "all" {
-					timeType = []string{"mod", "create", "access"}
-				} else {
-					ReturnCode = 2
-					return errors.New("invalid time type")
+		&cli.StringSliceFlag{
+			Name:    "time-type",
+			Usage:   "time type, mod(default), create, access, all, birth[macOS only]",
+			EnvVars: []string{"TIME_TYPE"},
+			Action: func(context *cli.Context, ss []string) error {
+				_ = context.Set("time", "1")
+				timeType = make([]string, 0, len(ss))
+				for _, s := range ss {
+					normalized, ok := normalizeTimeType(s)
+					if !ok {
+						ReturnCode = 2
+						return errors.New("invalid time type")
+					}
+					if normalized == "" {
+						timeType = []string{"mod", "create", "access"}
+						continue
+					}
+					timeType = append(timeType, normalized)
 				}
-			}
-			return nil
-		},
-		Category: "VIEW",
+				return nil
+			},
+			Category: "VIEW",
 	},
 	&cli.BoolFlag{
 		Name:               "access",
@@ -811,6 +811,23 @@ var viewFlag = []cli.Flag{
 		DisableDefaultText: true,
 		Category:           "VIEW",
 	},
+}
+
+func normalizeTimeType(s string) (string, bool) {
+	switch strings.ToLower(s) {
+	case "mod", "modified":
+		return "mod", true
+	case "create", "cr":
+		return "create", true
+	case "access", "ac":
+		return "access", true
+	case "birth":
+		return "birth", true
+	case "all":
+		return "", true
+	default:
+		return "", false
+	}
 }
 
 func setLimit() {

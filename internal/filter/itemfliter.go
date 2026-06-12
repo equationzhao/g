@@ -271,12 +271,12 @@ func AfterTime(t time.Time, timeFunc func(os.FileInfo) time.Time) ItemFilterFunc
 }
 
 func WhichTimeFiled(mod string) (t func(os.FileInfo) time.Time) {
-	switch mod {
-	case "mod":
+	switch strings.ToLower(mod) {
+	case "mod", "modified":
 		t = osbased.ModTime
-	case "create":
+	case "create", "cr":
 		t = osbased.CreateTime
-	case "access":
+	case "access", "ac":
 		t = osbased.AccessTime
 	case "birth":
 		// if darwin, check birth time

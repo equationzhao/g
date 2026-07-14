@@ -49,12 +49,16 @@ func catchPanic(err any) {
 
 func preprocessArgs() {
 	rearrangeArgs()
+	argsBeforeDelimiter := os.Args
+	if i := slices.Index(os.Args, "--"); i >= 0 {
+		argsBeforeDelimiter = os.Args[:i]
+	}
 	// normal logic
 	// load config if the args do not contains -no-config
-	if !slices.ContainsFunc(os.Args, hasNoConfig) {
+	if !slices.ContainsFunc(argsBeforeDelimiter, hasNoConfig) {
 		defaultArgs, err := config.Load()
 		// if successfully load config and **the config.Args do not contain -no-config**
-		if err == nil && !slices.ContainsFunc(defaultArgs.Args, hasNoConfig) {
+		if err == nil && defaultArgs != nil && !slices.ContainsFunc(defaultArgs.Args, hasNoConfig) {
 			os.Args = slices.Insert(os.Args, 1, defaultArgs.Args...)
 		} else if err != nil { // if failed to load config
 			// if it's read error
@@ -66,7 +70,7 @@ func preprocessArgs() {
 	} else {
 		// contains -no-config
 		// remove it before the cli.G starts
-		os.Args = slices.DeleteFunc(os.Args, hasNoConfig)
+		os.Args = append(slices.DeleteFunc(argsBeforeDelimiter, hasNoConfig), os.Args[len(argsBeforeDelimiter):]...)
 	}
 }
 
@@ -86,11 +90,8 @@ func separateArgs(args []string) (flags, paths []string) {
 		arg := args[i]
 		if arg == "--" {
 			hasDoubleDash = true
-			if i+1 < len(args) {
-				paths = append(paths, args[i+1])
-				i++
-			}
-			continue
+			paths = append(paths, args[i+1:]...)
+			break
 		}
 		if strings.HasPrefix(arg, "--") {
 			i = handleLongFlag(arg, args, i, &flags, &expectValue, flagsWithArgs)

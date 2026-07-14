@@ -73,6 +73,61 @@ func Test_preprocessArgs(t *testing.T) {
 	assert.Equal(t, 2, len(os.Args))
 }
 
+func TestPreprocessArgs_DelimiterProtectsNoConfigPaths(t *testing.T) {
+	originalArgs := os.Args
+	t.Cleanup(func() { os.Args = originalArgs })
+	tests := []struct {
+		name             string
+		args             []string
+		expectConfigLoad bool
+		expectedArgs     []string
+	}{
+		{
+			name:             "suffix paths do not disable config",
+			args:             []string{"g", "--", "--no-config", "-no-config"},
+			expectConfigLoad: true,
+			expectedArgs:     []string{"g", "--", "--no-config", "-no-config"},
+		},
+		{
+			name:             "prefix flag disables config without removing suffix paths",
+			args:             []string{"g", "--no-config", "--", "--no-config", "-no-config"},
+			expectConfigLoad: false,
+			expectedArgs:     []string{"g", "--", "--no-config", "-no-config"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configLoaded := false
+			patch := gomonkey.ApplyFunc(config.Load, func() (*config.Config, error) {
+				configLoaded = true
+				return &config.Config{}, nil
+			})
+			defer patch.Reset()
+			os.Args = append([]string{}, tt.args...)
+
+			preprocessArgs()
+
+			assert.Equal(t, tt.expectConfigLoad, configLoaded)
+			require.Equal(t, tt.expectedArgs, os.Args)
+		})
+	}
+}
+
+func TestPreprocessArgs_NilConfigKeepsDelimiterPaths(t *testing.T) {
+	originalArgs := os.Args
+	t.Cleanup(func() { os.Args = originalArgs })
+	patch := gomonkey.ApplyFunc(config.Load, func() (*config.Config, error) {
+		return nil, nil
+	})
+	t.Cleanup(patch.Reset)
+	os.Args = []string{"g", "--", "--no-config"}
+
+	assert.NotPanics(t, preprocessArgs)
+
+	require.Equal(t, []string{"g", "--", "--no-config"}, os.Args)
+}
+
 func TestSeparateArgs(t *testing.T) {
 	originalFlags := cli.G.Flags
 	defer func() { cli.G.Flags = originalFlags }()
@@ -119,6 +174,12 @@ func TestSeparateArgs(t *testing.T) {
 			expectedPaths: []string{"dir1", "--sort", "name"},
 		},
 		{
+			name:          "Delimiter protects all following paths",
+			args:          []string{"--", "a", "--bad"},
+			expectedFlags: []string{"--"},
+			expectedPaths: []string{"a", "--bad"},
+		},
+		{
 			name:          "Short flags",
 			args:          []string{"-a", "-s", "name", "dir1"},
 			expectedFlags: []string{"-a", "-s", "name"},
@@ -133,8 +194,8 @@ func TestSeparateArgs(t *testing.T) {
 		{
 			name:          "Complex case with double dash",
 			args:          []string{"--all", "dir1", "--term-width", "100", "-s", "name", "--", "-a", "-a", "-l", "dir2", "--", "--fake-flag"},
-			expectedFlags: []string{"--all", "--term-width", "100", "-s", "name", "-a", "-l", "--"},
-			expectedPaths: []string{"dir1", "-a", "dir2", "--fake-flag"},
+			expectedFlags: []string{"--all", "--term-width", "100", "-s", "name", "--"},
+			expectedPaths: []string{"dir1", "-a", "-a", "-l", "dir2", "--", "--fake-flag"},
 		},
 	}
 

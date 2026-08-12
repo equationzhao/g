@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/zeebo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoad(t *testing.T) {
@@ -30,13 +30,13 @@ CustomTreeStyle:
 
 	load, err := Load()
 	assert.NoError(t, err)
-	assert.DeepEqual(t, load.Args, []string{"--hyperlink=never", "--icons", "--fuzzy"})
-	assert.DeepEqual(t, load.CustomTreeStyle, TreeStyle{
+	assert.Equal(t, []string{"--hyperlink=never", "--icons", "--fuzzy"}, load.Args)
+	assert.Equal(t, TreeStyle{
 		Child:     "├── ",
 		LastChild: "╰── ",
 		Mid:       "│   ",
 		Empty:     "    ",
-	})
+	}, load.CustomTreeStyle)
 }
 
 func TestTreeStyle_IsEnabled(t1 *testing.T) {

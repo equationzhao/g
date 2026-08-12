@@ -209,10 +209,11 @@ func MimeTypeOnly(fileTypes ...string) ItemFilterFunc {
 		if e.IsDir() {
 			return keep
 		}
-		file, err := os.Open(e.Name())
+		file, err := os.Open(e.FullPath)
 		if err != nil {
 			return keep
 		}
+		defer file.Close()
 		mtype, err := mimetype.DetectReader(file)
 		if err != nil {
 			return keep
@@ -234,10 +235,11 @@ func MimeTypeOnly(fileTypes ...string) ItemFilterFunc {
 
 func RemoveMimeType(fileTypes ...string) ItemFilterFunc {
 	return func(e *item.FileInfo) bool {
-		file, err := os.Open(e.Name())
+		file, err := os.Open(e.FullPath)
 		if err != nil {
 			return keep
 		}
+		defer file.Close()
 		mtype, err := mimetype.DetectReader(file)
 		if err != nil {
 			return keep

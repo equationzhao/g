@@ -37,6 +37,8 @@ func TestWhichTimeFiledAliases(t *testing.T) {
 		{name: "access", input: "access", expected: osbased.AccessTime},
 		{name: "ac", input: "ac", expected: osbased.AccessTime},
 		{name: "birth", input: "birth", expected: osbased.BirthTime},
+		{name: "empty", input: "", expected: osbased.ModTime},
+		{name: "unknown", input: "nope", expected: osbased.ModTime},
 	}
 
 	for _, tc := range cases {

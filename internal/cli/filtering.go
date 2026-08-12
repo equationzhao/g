@@ -202,8 +202,7 @@ var filteringFlag = []cli.Flag{
 				if strings.HasPrefix(f, "01-02") {
 					t = t.AddDate(time.Now().Year(), 0, 0)
 				} else if strings.HasPrefix(f, "15:04") {
-					now := time.Now()
-					t = t.AddDate(now.Year(), int(now.Month()), now.Minute())
+					t = combineTodayWithClock(t, time.Now())
 				}
 				f := filter.BeforeTime(t, filter.WhichTimeFiled(timeType[0]))
 				itemFilterFunc = append(itemFilterFunc, &f)
@@ -235,8 +234,7 @@ var filteringFlag = []cli.Flag{
 					if strings.HasPrefix(f, "01-02") {
 						t = t.AddDate(time.Now().Year(), 0, 0)
 					} else if strings.HasPrefix(f, "15:04") {
-						now := time.Now()
-						t = t.AddDate(now.Year(), int(now.Month()), now.Minute())
+						t = combineTodayWithClock(t, time.Now())
 					}
 					f := filter.AfterTime(t, filter.WhichTimeFiled(timeType[0]))
 					itemFilterFunc = append(itemFilterFunc, &f)
@@ -246,4 +244,10 @@ var filteringFlag = []cli.Flag{
 			return errors.New("invalid time format")
 		},
 	},
+}
+
+// combineTodayWithClock keeps the clock from parsed and the calendar day from now.
+// Used when the user passes HH:mm without a date.
+func combineTodayWithClock(parsed, now time.Time) time.Time {
+	return time.Date(now.Year(), now.Month(), now.Day(), parsed.Hour(), parsed.Minute(), parsed.Second(), parsed.Nanosecond(), now.Location())
 }

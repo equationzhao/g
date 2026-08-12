@@ -10,7 +10,7 @@ import (
 
 	"github.com/Equationzhao/g/internal/item"
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/zeebo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestName_checkDereferenceErr(t *testing.T) {

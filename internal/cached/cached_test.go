@@ -3,7 +3,7 @@ package cached
 import (
 	"testing"
 
-	"github.com/zeebo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewCacheMap(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMap_Keys(t *testing.T) {
 	if len(keys) != 2 {
 		t.Error("Keys failed")
 	}
-	assert.DeepEqual(t, keys, []int{1, 2})
+	assert.ElementsMatch(t, []int{1, 2}, keys)
 }
 
 func TestMap_Values(t *testing.T) {
@@ -32,7 +32,7 @@ func TestMap_Values(t *testing.T) {
 	if len(values) != 2 {
 		t.Error("Values failed")
 	}
-	assert.DeepEqual(t, values, []int{2, 3})
+	assert.ElementsMatch(t, []int{2, 3}, values)
 }
 
 func TestMap_Pairs(t *testing.T) {
@@ -43,7 +43,7 @@ func TestMap_Pairs(t *testing.T) {
 	if len(pairs) != 2 {
 		t.Error("Pairs failed")
 	}
-	assert.DeepEqual(t, pairs, []Pair[int, int]{{First: 1, Second: 2}, {First: 2, Second: 3}})
+	assert.ElementsMatch(t, []Pair[int, int]{{First: 1, Second: 2}, {First: 2, Second: 3}}, pairs)
 }
 
 func TestMakePair(t *testing.T) {

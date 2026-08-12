@@ -3,7 +3,7 @@ package align
 import (
 	"testing"
 
-	"github.com/zeebo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsLeft(t *testing.T) {

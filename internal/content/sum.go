@@ -47,14 +47,14 @@ func (s SumEnabler) EnableSum(renderer *render.Renderer, sumTypes ...SumType) []
 				if err != nil {
 					return "", string(sumType)
 				}
+				defer func() {
+					_ = file.Close()
+				}()
 				content, err = io.ReadAll(file)
 				if err != nil {
 					return "", string(sumType)
 				}
 				info.Cache["content"] = content
-				defer func() {
-					_ = file.Close()
-				}()
 			}
 
 			var hashed hash.Hash

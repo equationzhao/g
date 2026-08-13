@@ -209,10 +209,10 @@ func makeLink(abs, name string) string {
 
 func checkIfEmpty(info *item.FileInfo) bool {
 	f, err := os.Open(info.FullPath)
-	if err == io.EOF || f == nil {
+	if err != nil {
 		return true
 	}
-	// meth Readdirnames contains nil check
+	defer f.Close()
 	_, err = f.Readdirnames(1)
 	return err == io.EOF
 }

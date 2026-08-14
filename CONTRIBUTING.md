@@ -1,5 +1,7 @@
 # Contribution Guidelines
 
+**Rewrite (`rewrite/v1`):** adding a flag is a one-way door. Read [docs/CONTRIBUTING-rewrite.md](docs/CONTRIBUTING-rewrite.md) first. `go test ./internal/parse` is the gate.
+
 This Contribution Guidelines is modified from the [GitHub doc](https://github.com/github/docs/) project
 
 Feel free to ask any questions in the [Discussions QA](https://github.com/Equationzhao/g/discussions/categories/q-a)

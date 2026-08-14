@@ -1,0 +1,5 @@
+# Every top-level directory under internal/ must appear here.
+# kind is rewrite or legacy. Unclassified packages fail CI.
+path	kind
+internal/parse	rewrite
+internal/rewritecheck	rewrite

@@ -1,0 +1,27 @@
+name: rewrite-gates
+
+on:
+  push:
+    branches: [rewrite/v1]
+  pull_request:
+    branches: [rewrite/v1]
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.26.1
+      - name: gates
+        run: go test -count=1 ./...
+      - name: generated docs are committed
+        run: |
+          go generate ./internal/parse
+          git diff --exit-code -- docs/flag-registry.md docs/rejected-flags.md docs/rewrite-man.md
+      - name: CGO off build
+        run: CGO_ENABLED=0 go build -o /tmp/g .

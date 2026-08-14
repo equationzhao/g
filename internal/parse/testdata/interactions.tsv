@@ -1,0 +1,14 @@
+# Directed dimension matrix. Every cell is orthogonal, same-dim, suppresses, error, or ignored.
+dim	Meta	Format	Long	Visibility	Walk	Filter	Sort	Size	Time	Present	Git	Deref
+Meta	same-dim	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Format	orthogonal	same-dim	suppresses	orthogonal	suppresses	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Long	orthogonal	suppresses	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	ignored	orthogonal	orthogonal
+Visibility	orthogonal	orthogonal	orthogonal	same-dim	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Walk	orthogonal	suppresses	orthogonal	orthogonal	suppresses	orthogonal	orthogonal	orthogonal	orthogonal	ignored	orthogonal	orthogonal
+Filter	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Sort	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Size	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	suppresses	orthogonal	orthogonal	orthogonal	orthogonal
+Time	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Present	orthogonal	orthogonal	ignored	orthogonal	ignored	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal
+Git	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	same-dim	orthogonal
+Deref	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	orthogonal	same-dim

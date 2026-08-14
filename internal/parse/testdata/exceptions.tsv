@@ -1,0 +1,21 @@
+# Flag-level exceptions to the dimension matrix.
+# name_a	name_b	relation	note
+# Names are Spec.Name (not aliases). Order does not matter.
+--long	--format	suppresses	long forces oneline for grid/across/comma; tree+long stays orthogonal at Validate
+--directory	--recursive	suppresses	-d lists argv roots only
+--directory	--depth	suppresses	no children to crop
+--directory	--format	suppresses	tree under -d is a single node
+--si	--human-readable	suppresses	SI wins regardless of argv order
+--reverse	--dir-order	suppresses	-r does not flip group order
+--zero	--format	error	Zero requires oneline
+--zero	--color	error	always-color pollutes NUL records
+--zero	--icons	error	icons pollute NUL records
+--zero	--hyperlink	error	OSC-8 pollutes NUL records
+--zero	--classify	error	classify suffix pollutes paths
+--zero	--quote-name	error	quotes become fake paths
+--zero	--header	ignored	header is not a filename
+--zero	--recursive	ignored	no path: banners under -0
+--blocks	--long	ignored	--blocks without -l is ignored
+--header	--long	ignored	--header without -l is ignored
+--format	--hyperlink	error	json + hyperlink=always is exit 2; auto is off
+--git-ignore	--git	orthogonal	share one Status() call

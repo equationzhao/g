@@ -21,14 +21,14 @@ type Root struct {
 }
 
 func Walk(fsys gfs.Filesystem, req request.Request) []Root {
-	out := make([]Root, 0, len(req.Paths))
+	var out []Root
 	for _, p := range req.Paths {
-		out = append(out, walkRoot(fsys, req, p))
+		out = append(out, walkExpand(fsys, req, p)...)
 	}
 	return out
 }
 
-func walkRoot(fsys gfs.Filesystem, req request.Request, p string) Root {
+func walkExpand(fsys gfs.Filesystem, req request.Request, p string) []Root {
 	abs, err := fsys.Abs(p)
 	if err != nil {
 		abs = p
@@ -38,33 +38,79 @@ func walkRoot(fsys gfs.Filesystem, req request.Request, p string) Root {
 	if err != nil {
 		r.Err = err
 		r.Code = 2
-		return r
+		return []Root{r}
 	}
 	self := toEntry(fsys, req, p, abs, filepath.Dir(abs), 0, fi, true)
 	deep := req.Recurse || req.Format == request.FormatTree
 	if req.DirSelf || !fi.IsDir() || (req.HasDepth && req.Depth == 0 && !deep) {
 		r.Entries = []entry.Entry{self}
-		return r
+		return []Root{r}
 	}
 	if req.HasDepth && req.Depth == 0 && req.Recurse && req.Format != request.FormatTree {
 		r.Entries = []entry.Entry{self}
-		return r
+		return []Root{r}
 	}
 	seen := map[[2]uint64]bool{}
 	if self.HasDevIno {
 		seen[[2]uint64{self.Dev, self.Ino}] = true
 	}
-	kids, code := walkDir(fsys, req, p, abs, 1, seen)
-	r.Code = code
 	if req.Format == request.FormatTree {
+		kids, code := walkDir(fsys, req, p, abs, 1, seen, true)
 		r.Entries = append([]entry.Entry{self}, kids...)
-		return r
+		r.Code = code
+		return []Root{r}
 	}
-	r.Entries = kids
-	return r
+	if !req.Recurse {
+		kids, code := listImmediate(fsys, req, p, abs, 1)
+		r.Entries = kids
+		r.Code = code
+		return []Root{r}
+	}
+	return recurseRoots(fsys, req, p, abs, 0, seen)
 }
 
-func walkDir(fsys gfs.Filesystem, req request.Request, display, abs string, depth int, seen map[[2]uint64]bool) ([]entry.Entry, int) {
+func recurseRoots(fsys gfs.Filesystem, req request.Request, display, abs string, depth int, seen map[[2]uint64]bool) []Root {
+	kids, code := listImmediate(fsys, req, display, abs, depth+1)
+	out := []Root{{Path: display, Abs: abs, Entries: kids, Code: code}}
+	for _, k := range kids {
+		if !k.IsDir() || k.Name == "." || k.Name == ".." {
+			continue
+		}
+		if skipDescend(k, req) {
+			continue
+		}
+		if req.HasDepth && k.Depth >= req.Depth {
+			continue
+		}
+		if k.HasDevIno {
+			key := [2]uint64{k.Dev, k.Ino}
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+		}
+		childDisp := k.Name
+		if display != "" && display != "." {
+			childDisp = filepath.Join(display, k.Name)
+		}
+		nested := recurseRoots(fsys, req, childDisp, k.Path, k.Depth, seen)
+		out = append(out, nested...)
+	}
+	return out
+}
+
+func skipDescend(e entry.Entry, req request.Request) bool {
+	if e.Name == "." || e.Name == ".." {
+		return true
+	}
+	return e.Hidden && req.Visibility == request.VisHidden
+}
+
+func listImmediate(fsys gfs.Filesystem, req request.Request, display, abs string, depth int) ([]entry.Entry, int) {
+	return walkDir(fsys, req, display, abs, depth, nil, false)
+}
+
+func walkDir(fsys gfs.Filesystem, req request.Request, display, abs string, depth int, seen map[[2]uint64]bool, descend bool) ([]entry.Entry, int) {
 	if req.HasDepth && depth > req.Depth {
 		return nil, 0
 	}
@@ -73,7 +119,7 @@ func walkDir(fsys gfs.Filesystem, req request.Request, display, abs string, dept
 		return nil, 1
 	}
 	out := make([]entry.Entry, 0, len(ents)+2)
-	if depth == 1 && req.Visibility == request.VisAll {
+	if req.Visibility == request.VisAll {
 		out = append(out, dotEntry(abs, ".", depth), dotEntry(abs, "..", depth))
 	}
 	code := 0
@@ -90,21 +136,23 @@ func walkDir(fsys gfs.Filesystem, req request.Request, display, abs string, dept
 		ent.ReadOrder = order
 		order++
 		out = append(out, ent)
-		descend := (req.Recurse || req.Format == request.FormatTree) && fi.IsDir()
-		if !descend {
+		if !descend || !fi.IsDir() {
+			continue
+		}
+		if skipDescend(ent, req) {
 			continue
 		}
 		if req.HasDepth && depth >= req.Depth {
 			continue
 		}
-		if ent.HasDevIno {
+		if seen != nil && ent.HasDevIno {
 			key := [2]uint64{ent.Dev, ent.Ino}
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
 		}
-		nested, c := walkDir(fsys, req, childDisp, childAbs, depth+1, seen)
+		nested, c := walkDir(fsys, req, childDisp, childAbs, depth+1, seen, true)
 		if c > code {
 			code = c
 		}

@@ -53,6 +53,10 @@ func TestListDefaultLongTree(t *testing.T) {
 	if strings.Contains(out, "rewrite/v1 stub") {
 		t.Fatal("stub leaked")
 	}
+	// TTY + width 80: three short names must share a row (grid), not one-per-line.
+	if defLines := nonempty(out); len(defLines) != 1 || !strings.Contains(defLines[0], "readme") || !strings.Contains(defLines[0], "zzz") {
+		t.Fatalf("default TTY listing should be multi-column: %q", out)
+	}
 
 	lout, _, code := run(t, mem, "-l", "/fix")
 	if code != 0 {
@@ -152,6 +156,108 @@ func TestGNUShortsListing(t *testing.T) {
 	}
 }
 
+func TestRecursiveBlocks(t *testing.T) {
+	mem := fixture()
+	mem.AddDir("/fix/.secret")
+	mem.AddFile("/fix/.secret/leaked", 1)
+
+	out, errb, code := run(t, mem, "-1", "-R", "/fix")
+	if code != 0 {
+		t.Fatalf("code=%d err=%q out=%q", code, errb, out)
+	}
+	blocks := parseListingBlocks(out)
+	if len(blocks) < 2 {
+		t.Fatalf("want a path: block per directory, got %d in %q", len(blocks), out)
+	}
+	rootBody, rootOK := blockBody(blocks, "/fix")
+	aBody, aOK := blockBody(blocks, "/fix/a")
+	if !rootOK {
+		t.Fatalf("missing root path: header in %q (headers=%v)", out, blockHeaders(blocks))
+	}
+	if !aOK {
+		t.Fatalf("missing subdirectory path: header (want /fix/a:) in %q (headers=%v)", out, blockHeaders(blocks))
+	}
+	if hasExactLine(rootBody, "b") {
+		t.Fatalf("b listed as a sibling of the root listing (flattened -R): %q", out)
+	}
+	if !hasExactLine(rootBody, "readme") || !hasExactLine(rootBody, "a") {
+		t.Fatalf("root block missing a/readme: %q", rootBody)
+	}
+	if !hasExactLine(aBody, "b") {
+		t.Fatalf("a/ block missing b: %q", aBody)
+	}
+	if hasExactLine(aBody, "readme") {
+		t.Fatalf("readme leaked into a/ block: %q", aBody)
+	}
+	if _, ok := blockBody(blocks, ".secret"); ok {
+		t.Fatalf("recursed into hidden dir without -a: %q", out)
+	}
+	if strings.Contains(out, "leaked") {
+		t.Fatalf("hidden-dir child printed without -a: %q", out)
+	}
+
+	grid, _, code := run(t, mem, "-R", "/fix")
+	if code != 0 {
+		t.Fatal(code)
+	}
+	if !strings.Contains(grid, "/fix/a:") {
+		t.Fatalf("grid -R missing subdirectory header: %q", grid)
+	}
+	if strings.Contains(grid, "leaked") {
+		t.Fatalf("grid -R printed hidden-dir child: %q", grid)
+	}
+
+	shown, _, code := run(t, mem, "-1", "-A", "-R", "/fix")
+	if code != 0 {
+		t.Fatal(code)
+	}
+	if !strings.Contains(shown, "leaked") {
+		t.Fatalf("-AR should recurse into hidden dirs: %q", shown)
+	}
+}
+
+func TestGitLongNotDuplicated(t *testing.T) {
+	mem := fixture()
+	out, errb, code := run(t, mem, "-l", "--git", "/fix")
+	if code != 0 {
+		t.Fatalf("code=%d err=%q out=%q", code, errb, out)
+	}
+	for _, ln := range nonempty(out) {
+		f := strings.Fields(ln)
+		if len(f) < 2 {
+			t.Fatalf("short long line: %q", ln)
+		}
+		if f[len(f)-2] != "--" {
+			t.Fatalf("want git column immediately before name, got %q", ln)
+		}
+		if len(f) >= 3 && f[len(f)-3] == "--" {
+			t.Fatalf("git cell printed twice (prefix+column): %q", ln)
+		}
+	}
+
+	var out2, errb2 bytes.Buffer
+	d := Deps{
+		FS:         mem,
+		Git:        git.Fake{Repos: map[string]git.RepoStatus{"/fix": {Files: []git.FileStatus{{RelPath: "readme", X: git.StatusModified, Y: git.StatusNone}}}}},
+		IDs:        NewIdentCache(),
+		Stdout:     &out2,
+		Stderr:     &errb2,
+		Now:        func() time.Time { return mem.Now },
+		IsTerminal: func() bool { return true },
+		TermWidth:  func() int { return 80 },
+	}
+	if code := Run([]string{"-l", "--git", "/fix"}, []string{"COLUMNS=80"}, d); code != 0 {
+		t.Fatalf("code=%d err=%q", code, errb2.String())
+	}
+	got := out2.String()
+	if strings.Contains(got, "M- M-") || strings.Contains(got, "-- --") {
+		t.Fatalf("git cell duplicated with real status: %q", got)
+	}
+	if !strings.Contains(got, "M-") {
+		t.Fatalf("expected M- git column: %q", got)
+	}
+}
+
 func TestGitDegrade(t *testing.T) {
 	mem := fixture()
 	out, errb, code := run(t, mem, "--git", "-1", "/fix")
@@ -197,4 +303,56 @@ func idx(a []string, name string) int {
 		}
 	}
 	return 99
+}
+
+type listingBlock struct {
+	Header string
+	Body   string
+}
+
+func parseListingBlocks(out string) []listingBlock {
+	var blocks []listingBlock
+	var cur *listingBlock
+	for _, ln := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
+		if strings.HasSuffix(ln, ":") && !strings.Contains(ln, " ") {
+			blocks = append(blocks, listingBlock{Header: strings.TrimSuffix(ln, ":")})
+			cur = &blocks[len(blocks)-1]
+			continue
+		}
+		if cur == nil {
+			blocks = append(blocks, listingBlock{})
+			cur = &blocks[len(blocks)-1]
+		}
+		if cur.Body != "" {
+			cur.Body += "\n"
+		}
+		cur.Body += ln
+	}
+	return blocks
+}
+
+func blockBody(blocks []listingBlock, suffix string) (string, bool) {
+	for _, b := range blocks {
+		if b.Header == suffix || strings.HasSuffix(b.Header, suffix) {
+			return b.Body, true
+		}
+	}
+	return "", false
+}
+
+func blockHeaders(blocks []listingBlock) []string {
+	h := make([]string, len(blocks))
+	for i, b := range blocks {
+		h[i] = b.Header
+	}
+	return h
+}
+
+func hasExactLine(body, name string) bool {
+	for _, ln := range strings.Split(body, "\n") {
+		if strings.TrimSpace(ln) == name {
+			return true
+		}
+	}
+	return false
 }

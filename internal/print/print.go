@@ -79,23 +79,20 @@ func displayName(e entry.Entry, req request.Request) string {
 			name += " -> " + e.Target
 		}
 	}
-	if req.Git && e.Git != "" {
-		name = e.Git + " " + name
-	}
-	if req.Inode && !(req.Long && true) {
-		// inode prefix when not absorbed into long columns differently
+	if req.Long {
+		return name
 	}
 	var prefix []string
 	if req.Inode {
 		prefix = append(prefix, padInode(e.Inode))
 	}
-	if req.Links && !req.Long {
+	if req.Links {
 		prefix = append(prefix, fmt.Sprintf("%d", e.Nlink))
 	}
-	if req.Git && !req.Long {
-		// already prepended
+	if req.Git && e.Git != "" {
+		prefix = append(prefix, e.Git)
 	}
-	if len(prefix) > 0 && !req.Long {
+	if len(prefix) > 0 {
 		name = strings.Join(prefix, " ") + " " + name
 	}
 	return name

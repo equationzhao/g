@@ -311,4 +311,4 @@ Interested in contributing? Check out the [contributing guidelines](./CONTRIBUTI
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Equationzhao/g&type=Date)](https://www.star-history.com/#Equationzhao/g&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=Equationzhao/g&type=Date)](https://star-history.dera.page/#Equationzhao/g&Date)

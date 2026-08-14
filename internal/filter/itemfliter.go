@@ -281,6 +281,8 @@ func WhichTimeFiled(mod string) (t func(os.FileInfo) time.Time) {
 		t = osbased.AccessTime
 	case "birth":
 		t = osbased.BirthTime
+	default:
+		t = osbased.ModTime
 	}
 	return t
 }

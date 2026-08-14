@@ -112,6 +112,10 @@ func ByTimeAscend(timeType string) FileSortFunc {
 		return func(a, b *item.FileInfo) int {
 			return osbased.CreateTime(b).Compare(osbased.CreateTime(a))
 		}
+	case "birth":
+		return func(a, b *item.FileInfo) int {
+			return osbased.BirthTime(b).Compare(osbased.BirthTime(a))
+		}
 	default:
 		panic("invalid time type")
 	}
@@ -130,6 +134,10 @@ func ByTimeDescend(timeType string) FileSortFunc {
 	case "create", "cr":
 		return func(a, b *item.FileInfo) int {
 			return osbased.CreateTime(a).Compare(osbased.CreateTime(b))
+		}
+	case "birth":
+		return func(a, b *item.FileInfo) int {
+			return osbased.BirthTime(a).Compare(osbased.BirthTime(b))
 		}
 	default:
 		panic("invalid time type")

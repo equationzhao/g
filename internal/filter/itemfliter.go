@@ -246,12 +246,12 @@ func RemoveMimeType(fileTypes ...string) ItemFilterFunc {
 		}
 
 		s := mtype.String()
+		if strings.Contains(s, ";") {
+			// remove charset
+			s = strings.SplitN(s, ";", 2)[0]
+		}
 		for i := range fileTypes {
-			if strings.Contains(s, ";") {
-				// remove charset
-				s = strings.SplitN(s, ";", 2)[0]
-			}
-			if fileTypes[i] == mtype.String() {
+			if fileTypes[i] == s {
 				return remove
 			}
 		}

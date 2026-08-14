@@ -3,3 +3,13 @@
 path	kind
 internal/parse	rewrite
 internal/rewritecheck	rewrite
+internal/request	rewrite
+internal/entry	rewrite
+internal/fs	rewrite
+internal/collect	rewrite
+internal/filter	rewrite
+internal/sort	rewrite
+internal/print	rewrite
+internal/git	rewrite
+internal/quote	rewrite
+internal/app	rewrite

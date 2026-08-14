@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/Equationzhao/g/internal/app"
 )
 
 func main() {
-	_, _ = fmt.Fprintln(os.Stderr, "g: rewrite/v1 stub; directory listing is not implemented yet")
-	os.Exit(2)
+	os.Exit(app.Run(os.Args[1:], os.Environ(), app.OSDeps()))
 }

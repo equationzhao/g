@@ -78,11 +78,8 @@ func (e *MimeFileTypeEnabler) Enable(renderer *render.Renderer) ContentOption {
 				tn = strings.SplitN(tn, "/", 2)[0]
 			}
 
-			if strings.Contains(tn, ";") {
-				// remove charset
-				s := strings.SplitN(tn, ";", 2)
-				tn = s[0]
-				charset := strings.SplitN(s[1], "=", 2)[1]
+			tn, charset := splitMimeAndCharset(tn)
+			if charset != "" {
 				info.Cache[Charset] = []byte(charset)
 			}
 
@@ -90,4 +87,26 @@ func (e *MimeFileTypeEnabler) Enable(renderer *render.Renderer) ContentOption {
 		}()
 		return renderer.Mime(res), returnName
 	}
+}
+
+// splitMimeAndCharset strips an optional "; charset=..." suffix.
+// Malformed parameters are ignored instead of panicking.
+func splitMimeAndCharset(tn string) (mimeType, charset string) {
+	if !strings.Contains(tn, ";") {
+		return tn, ""
+	}
+	parts := strings.SplitN(tn, ";", 2)
+	mimeType = strings.TrimSpace(parts[0])
+	if len(parts) < 2 {
+		return mimeType, ""
+	}
+	param := strings.TrimSpace(parts[1])
+	kv := strings.SplitN(param, "=", 2)
+	if len(kv) != 2 {
+		return mimeType, ""
+	}
+	if strings.EqualFold(strings.TrimSpace(kv[0]), "charset") {
+		return mimeType, strings.TrimSpace(kv[1])
+	}
+	return mimeType, ""
 }

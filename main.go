@@ -70,7 +70,7 @@ func preprocessArgs() {
 	} else {
 		// contains -no-config
 		// remove it before the cli.G starts
-		os.Args = append(slices.DeleteFunc(argsBeforeDelimiter, hasNoConfig), os.Args[len(argsBeforeDelimiter):]...)
+		os.Args = append(slices.DeleteFunc(slices.Clone(argsBeforeDelimiter), hasNoConfig), os.Args[len(argsBeforeDelimiter):]...)
 	}
 }
 

@@ -82,3 +82,70 @@ func TestBeforeTimeAndAfterTimeWithAlias(t *testing.T) {
 	requireNoPanic("BeforeTime(modified)", BeforeTime(time.Unix(200, 0), WhichTimeFiled("modified")))
 	requireNoPanic("AfterTime(modified)", AfterTime(time.Unix(50, 0), WhichTimeFiled("modified")))
 }
+
+func newNamedInfo(name string) *item.FileInfo {
+	return &item.FileInfo{FileInfo: testFileInfo{name: name}}
+}
+
+// TestRemoveByExtAcceptsLeadingDot guards the fix for #335: a user may pass the
+// extension with or without a leading dot, and both must exclude the same files.
+// Before the fix, ".txt" was concatenated as "..txt" and matched nothing.
+func TestRemoveByExtAcceptsLeadingDot(t *testing.T) {
+	candidates := []*item.FileInfo{
+		newNamedInfo("a.txt"),
+		newNamedInfo("b.csv"),
+		newNamedInfo("noext"),
+	}
+	for _, tc := range []struct {
+		name string
+		ext  string
+	}{
+		{name: "bare", ext: "txt"},
+		{name: "leading-dot", ext: ".txt"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := RemoveByExt(tc.ext)
+			var kept []string
+			for _, c := range candidates {
+				if f(c) {
+					kept = append(kept, c.Name())
+				}
+			}
+			want := []string{"b.csv", "noext"}
+			if !reflect.DeepEqual(kept, want) {
+				t.Errorf("RemoveByExt(%q) kept %v, want %v", tc.ext, kept, want)
+			}
+		})
+	}
+}
+
+// TestExtOnlyAcceptsLeadingDot confirms ExtOnly shares the same leading-dot
+// tolerance as RemoveByExt.
+func TestExtOnlyAcceptsLeadingDot(t *testing.T) {
+	candidates := []*item.FileInfo{
+		newNamedInfo("a.txt"),
+		newNamedInfo("b.csv"),
+		newNamedInfo("noext"),
+	}
+	for _, tc := range []struct {
+		name string
+		ext  string
+	}{
+		{name: "bare", ext: "csv"},
+		{name: "leading-dot", ext: ".csv"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := ExtOnly(tc.ext)
+			var kept []string
+			for _, c := range candidates {
+				if f(c) {
+					kept = append(kept, c.Name())
+				}
+			}
+			want := []string{"b.csv"}
+			if !reflect.DeepEqual(kept, want) {
+				t.Errorf("ExtOnly(%q) kept %v, want %v", tc.ext, kept, want)
+			}
+		})
+	}
+}

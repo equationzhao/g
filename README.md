@@ -5,6 +5,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/Equationzhao/g)](https://github.com/Equationzhao/g/network)
 [![GitHub issues](https://img.shields.io/github/issues/Equationzhao/g)](https://github.com/Equationzhao/g/issues)
 [![GitHub license](https://img.shields.io/github/license/Equationzhao/g)](https://github.com/Equationzhao/g/blob/master/LICENSE)
+[![g on The Terminal Index](https://cli.masoko.net/badge/g.svg)](https://cli.masoko.net/tools/g/)
 
 A feature-rich, customizable, and cross-platform `ls` alternative.
 

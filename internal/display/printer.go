@@ -471,6 +471,9 @@ func (z *Zero) Print(items ...*item.FileInfo) {
 	}()
 	for _, v := range items {
 		_, _ = z.WriteString(v.OrderedContent(" "))
+		// --zero ends each entry with a NUL byte so consumers can split the
+		// stream safely even when an entry's content itself contains newlines.
+		_ = z.WriteByte(0)
 	}
 	if !z.disableAfter {
 		fire(z.AfterPrint, z, items...)

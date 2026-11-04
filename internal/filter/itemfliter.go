@@ -70,6 +70,15 @@ var DirOnly = func(e *item.FileInfo) bool {
 	return e.IsDir()
 }
 
+// extSuffix returns the suffix used to match a file's extension against a
+// user-supplied extension token. The token may be given with or without a
+// leading dot ("txt" or ".txt"); exactly one dot separates the extension from
+// the basename, so a leading dot on the input is trimmed rather than doubled
+// (".txt" must not become "..txt").
+func extSuffix(ext string) string {
+	return "." + strings.TrimPrefix(ext, ".")
+}
+
 // RemoveByExt
 //
 //	eg:
@@ -80,7 +89,7 @@ var DirOnly = func(e *item.FileInfo) bool {
 func RemoveByExt(ext ...string) ItemFilterFunc {
 	return func(e *item.FileInfo) bool {
 		for _, extI := range ext {
-			if strings.HasSuffix(e.Name(), "."+extI) {
+			if strings.HasSuffix(e.Name(), extSuffix(extI)) {
 				return remove
 			}
 		}
@@ -91,7 +100,7 @@ func RemoveByExt(ext ...string) ItemFilterFunc {
 func ExtOnly(ext ...string) ItemFilterFunc {
 	return func(e *item.FileInfo) bool {
 		for _, extI := range ext {
-			if strings.HasSuffix(e.Name(), "."+extI) {
+			if strings.HasSuffix(e.Name(), extSuffix(extI)) {
 				return keep
 			}
 		}

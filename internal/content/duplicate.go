@@ -124,7 +124,11 @@ func (d *DuplicateDetect) Fprint(w io.Writer) {
 	}
 }
 
-var thresholdFileSize = int64(16 * KiB)
+// thresholdFileSize caps the size of files whose full contents are read for
+// duplicate hashing. Use a literal byte count (16 KiB): the SizeUnit constants
+// are float64 powers (KiB = 1<<30 = 1 GiB), so `16 * KiB` would silently turn a
+// 16 KiB cap into ~16 GiB and let os.ReadFile pull gigabytes into memory.
+var thresholdFileSize = int64(16 * 1024)
 
 // fileHash calculates the hash of the file provided.
 // If isThorough is true, then it uses SHA256 of the entire file.
